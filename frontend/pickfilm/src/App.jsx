@@ -37,7 +37,7 @@ function App() {
         <nav className="navigation">
           <a href="#">Search</a>
           <span className="divider">|</span>
-          <a href="#">My list</a>
+          <a href="#">Profile</a>
           <span className="divider">|</span>
           <a href="#">Popular</a>
           <span className="divider">|</span>
@@ -93,7 +93,7 @@ function App() {
               ))}
             </div>
             <button type="button" className="reset-all" onClick={handleResetAll}>
-              Reset
+              Clear
             </button>
           </section>
         )}
