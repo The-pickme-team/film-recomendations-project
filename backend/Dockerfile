@@ -1,15 +1,25 @@
-FROM python:3.14-slim
+FROM python:3.14-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/
 
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --locked --compile-bytecode
+
+FROM python:3.14-slim AS runtime
 
 WORKDIR /app
 
-COPY ./requirements.txt ./
-RUN pip install -r requirements.txt
+COPY --from=builder /app/.venv /app/.venv
 
 COPY ./src ./src
 COPY ./run.sh ./
 
 RUN chmod +x ./run.sh
+
+ENV PATH=/app/.venv/bin:$PATH \
+  PYTHONOPTIMIZE=1 \
+  PYTHONFAULTHANDLER=1 \
+  PYTHONUNBUFFERED=1
+
 ENTRYPOINT ["./run.sh"]
