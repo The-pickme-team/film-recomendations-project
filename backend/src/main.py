@@ -1,3 +1,5 @@
 from litestar import Litestar
 
-app = Litestar()
+app = Litestar(
+    route_handlers=[],
+)
