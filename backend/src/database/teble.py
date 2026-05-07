@@ -36,10 +36,10 @@ class BaseTable(DeclarativeBase):
     )
 
 
-class File(BaseTable, ID, Time):
+class Film(BaseTable, ID, Time):
     """ORM model for stored file metadata."""
 
-    __tablename__ = 'files'
+    __tablename__ = 'films'
 
     name: Mapped[str] = mapped_column()
     description: Mapped[str] = mapped_column()
@@ -59,7 +59,7 @@ class Vector(BaseTable, ID, Time):
     __tablename__ = 'vectors'
 
     file_id: Mapped[UUID] = mapped_column(
-        ForeignKey('files.id'), primary_key=True
+        ForeignKey('films.id'), primary_key=True
     )
     vector: Mapped[list[float]] = mapped_column(HALFVEC(1024))
     model: Mapped[str] = mapped_column()

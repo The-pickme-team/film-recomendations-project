@@ -1,0 +1,11 @@
+api:
+  title: Backend API
+  version: 1.0.0
+  description: Backend API for film recommendations.
+  dev: true
+  database:
+    pool_size: 50
+    max_overflow: 100
+
+logging:
+  level: info
