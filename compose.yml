@@ -1,4 +1,28 @@
 services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: api
+    ports:
+      - "8000:8000"
+    environment:
+      API__DATABASE__URL: postgresql+asyncpg://user:password@postgres:5432/database
+    volumes:
+      - ./backend/config.yaml:/app/config.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    restart: unless-stopped
+
   postgres:
     build:
       context: ./Postgres
@@ -16,8 +40,8 @@ services:
           cpus: '6.0'
           memory: 6G
         reservations:
-          cpus: '6.0'
-          memory: 6G
+          cpus: '3.0'
+          memory: 3G
     command: >
       postgres -c max_connections=150
                -c shared_buffers=1536MB
