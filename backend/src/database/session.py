@@ -45,21 +45,23 @@ class Session:
         )
         cls.__active = True
 
-    async def dispose(self):
+    @classmethod
+    async def dispose(cls):
         """Dispose of the async database engine and cleanup resources."""
-        if not self.__active:
+        if not cls.__active:
             raise RuntimeError('Session is not active. Call setap() first.')
 
-        await self.__engine.dispose()
+        await cls.__engine.dispose()
 
-    async def session(self):
+    @classmethod
+    async def session(cls):
         """Create and return a new async session instance."""
-        if not self.__active:
+        if not cls.__active:
             raise RuntimeError('Session is not active. Call setap() first.')
 
-        session = self.__session_factory()
+        session = cls.__session_factory()
         try:
-            return session
+            yield session
         except BaseException:
             await session.rollback()
             raise
