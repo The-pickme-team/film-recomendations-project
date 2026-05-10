@@ -27,18 +27,38 @@ const RECOMMENDED = [
 
 function PopularPage() {
   const scrollRef = useRef(null)
+  const getScrollStep = () => {
+    const track = scrollRef.current
+    if (!track) {
+      return null
+    }
+    const card = track.querySelector('.pop-card')
+    if (!(card instanceof HTMLElement)) {
+      return null
+    }
+    const styles = window.getComputedStyle(track)
+    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0')
+    if (Number.isNaN(gap)) {
+      return card.offsetWidth
+    }
+    return card.offsetWidth + gap
+  }
 
   const scrollLeft = () => {
-    const card = scrollRef.current.querySelector('.pop-card')
-    const step = card.offsetWidth + 14 // ширина картки + gap
+    const step = getScrollStep()
+    if (step === null) {
+      return
+    }
     scrollRef.current.scrollBy({ left: -step, behavior: 'smooth' })
-}
+  }
 
   const scrollRight = () => {
-    const card = scrollRef.current.querySelector('.pop-card')
-    const step = card.offsetWidth + 14
+    const step = getScrollStep()
+    if (step === null) {
+      return
+    }
     scrollRef.current.scrollBy({ left: step, behavior: 'smooth' })
-}
+  }
 
   return (
     <div className="popular-page">
