@@ -1,11 +1,19 @@
 services:
   frontend:
     build:
-      context: ./frontend/pickfilm
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "3000:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     depends_on:
       - api
     restart: unless-stopped
