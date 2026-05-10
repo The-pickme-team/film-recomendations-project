@@ -41,6 +41,27 @@
   opacity: 1;
 }
 
+.nav-btn {
+  background: none;
+  border: none;
+  color: #f9e2ff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.nav-btn:hover {
+  opacity: 1;
+}
+
+.nav-btn--active {
+  color: #ff74d8;
+  opacity: 1;
+  font-weight: 600;
+}
+
 .divider {
   color: #8f5e9e;
   opacity: 0.7;
