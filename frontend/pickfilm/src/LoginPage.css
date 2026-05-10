@@ -1,0 +1,133 @@
+.login-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 40px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  padding: 40px 36px;
+}
+
+.login-title {
+  text-align: center;
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+  color: #fff;
+}
+
+.login-subtitle {
+  text-align: center;
+  margin: 0 0 28px;
+  color: rgba(248, 210, 255, 0.6);
+  font-size: 0.95rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.login-field label {
+  font-size: 0.85rem;
+  color: rgba(248, 210, 255, 0.7);
+  letter-spacing: 0.04em;
+}
+
+.login-field input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.login-field input:focus {
+  border-color: #ff74d8;
+}
+
+.login-field input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.forgot-link {
+  font-size: 0.8rem;
+  color: #ff74d8;
+  cursor: pointer;
+  align-self: flex-end;
+  margin-top: 2px;
+}
+
+.forgot-link:hover {
+  opacity: 0.8;
+}
+
+.login-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  background: #b42bd8;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  background: #d758ff;
+}
+
+.login-divider {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.85rem;
+  margin: 18px 0;
+  position: relative;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 42%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.login-divider::before { left: 0; }
+.login-divider::after  { right: 0; }
+
+.signup-text {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(248, 210, 255, 0.55);
+}
+
+.signup-link {
+  color: #ff74d8;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.signup-link:hover {
+  opacity: 0.8;
+}
