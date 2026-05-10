@@ -1,6 +1,6 @@
 import './LoginPage.css'
 
-function LoginPage({ onNavigate }) {
+function LoginPage() {
   return (
     <div className="login-wrap">
       <div className="login-card">

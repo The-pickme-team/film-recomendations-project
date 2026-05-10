@@ -1,8 +1,19 @@
 services:
+  frontend:
+    build:
+      context: ./frontend/pickfilm
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
   api:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.api
     container_name: api
     ports:
       - "8000:8000"

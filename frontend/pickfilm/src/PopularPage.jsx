@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import './PopularPage.css'
 
-//Тимчасові фільми для вкладки "популярні зараз"
+// Temporary films for the "popular right now" section
 const POPULAR_NOW = [
   {id: 1, title: 'Dune: Part Two', year: 2024, rating: '9.1', genre: 'Sci-Fi'},
   {id: 2, title: 'Oppenheimer', year: 2023, rating: '8.9', genre: 'Drama'},
@@ -13,7 +13,7 @@ const POPULAR_NOW = [
   {id: 8, title: 'The Substance', year: 2024, rating: '7.6', genre: 'Horror'},
 ]
 
-//Тимчасові фільми для блоку "персональні рекомендації"
+// Temporary films for the "personal recommendations" section
 const RECOMMENDED = [
   {id: 9,  title: 'A Quiet Place: Day One', year: 2024, rating: '7.2', genre: 'Horror'},
   {id: 10, title: 'Furiosa', year: 2024, rating: '7.8', genre: 'Action'},
@@ -27,18 +27,38 @@ const RECOMMENDED = [
 
 function PopularPage() {
   const scrollRef = useRef(null)
+  const getScrollStep = () => {
+    const track = scrollRef.current
+    if (!track) {
+      return null
+    }
+    const card = track.querySelector('.pop-card')
+    if (!(card instanceof HTMLElement)) {
+      return null
+    }
+    const styles = window.getComputedStyle(track)
+    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0')
+    if (Number.isNaN(gap)) {
+      return card.offsetWidth
+    }
+    return card.offsetWidth + gap
+  }
 
   const scrollLeft = () => {
-    const card = scrollRef.current.querySelector('.pop-card')
-    const step = card.offsetWidth + 14 // ширина картки + gap
+    const step = getScrollStep()
+    if (step === null) {
+      return
+    }
     scrollRef.current.scrollBy({ left: -step, behavior: 'smooth' })
-}
+  }
 
   const scrollRight = () => {
-    const card = scrollRef.current.querySelector('.pop-card')
-    const step = card.offsetWidth + 14
+    const step = getScrollStep()
+    if (step === null) {
+      return
+    }
     scrollRef.current.scrollBy({ left: step, behavior: 'smooth' })
-}
+  }
 
   return (
     <div className="popular-page">
