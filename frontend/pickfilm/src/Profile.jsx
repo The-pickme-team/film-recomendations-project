@@ -1,6 +1,6 @@
-// Profile.jsx - Компонент страницы профиля с inline-стилями
+// Profile.jsx - Profile page component with inline styles
 
-// Данные для фильмов
+// Movie data
 const movies = [
   {
     description: 'Dominant features: cinematography and visual effects. A stunning visual spectacle with groundbreaking technology and immersive cinematography.',
@@ -20,7 +20,7 @@ const movies = [
 ]
 
 function Profile({ onSearch }) {
-  // Стили для контейнера страницы
+  // Page container styles
   const pageStyle = {
     minHeight: '100vh',
     backgroundColor: '#120112',
@@ -29,13 +29,13 @@ function Profile({ onSearch }) {
     color: '#f8d2ff',
   }
 
-  // Стили для главного контента
+  // Main content styles
   const mainContentStyle = {
     maxWidth: '1120px',
     margin: '0 auto',
   }
 
-  // Стили для заголовка "Added films"
+  // "Added films" title styles
   const titleStyle = {
     fontSize: '2.5rem',
     color: '#ffffff',
@@ -45,7 +45,7 @@ function Profile({ onSearch }) {
     letterSpacing: '-0.02em',
   }
 
-  // Стили для подзаголовка
+  // Subtitle styles
   const subtitleStyle = {
     fontSize: '0.95rem',
     color: 'rgba(248, 210, 255, 0.55)',
@@ -53,14 +53,14 @@ function Profile({ onSearch }) {
     lineHeight: '1.6',
   }
 
-  // Стили для контейнера с карточками фильмов
+  // Movie cards container styles
   const moviesContainerStyle = {
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
   }
 
-  // Стили для карточки фильма
+  // Movie card styles
   const movieCardStyle = {
     display: 'flex',
     gap: '24px',
@@ -70,7 +70,7 @@ function Profile({ onSearch }) {
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
   }
 
-  // Стили для плейсхолдера изображения
+  // Movie poster placeholder styles
   const posterStyle = {
     width: '120px',
     height: '160px',
@@ -80,7 +80,7 @@ function Profile({ onSearch }) {
     flexShrink: 0,
   }
 
-  // Стили для информационного блока
+  // Movie info block styles
   const infoStyle = {
     flex: 1,
     display: 'flex',
@@ -88,7 +88,7 @@ function Profile({ onSearch }) {
     gap: '12px',
   }
 
-  // Стили для заголовков в карточке (Description, Genre, Year)
+  // Label styles (Description, Genre, Year)
   const labelStyle = {
     fontSize: '0.9rem',
     color: '#e0b0ff',
@@ -97,7 +97,7 @@ function Profile({ onSearch }) {
     margin: '0 0 4px 0',
   }
 
-  // Стили для текста под заголовками
+  // Text styles under labels
   const textStyle = {
     fontSize: '0.95rem',
     color: 'rgba(248, 210, 255, 0.65)',
@@ -107,19 +107,15 @@ function Profile({ onSearch }) {
 
   return (
     <div style={pageStyle}>
-      {/* Main Content */}
       <main style={mainContentStyle}>
         <h1 style={titleStyle}>Added films</h1>
         <p style={subtitleStyle}>The films you add influence your Popular for you page</p>
 
-        {/* Movies List */}
         <div style={moviesContainerStyle}>
           {movies.map((movie, index) => (
             <div key={index} style={movieCardStyle}>
-              {/* Movie Poster Placeholder */}
               <div style={posterStyle} />
 
-              {/* Movie Info */}
               <div style={infoStyle}>
                 <div>
                   <p style={labelStyle}>Description</p>
