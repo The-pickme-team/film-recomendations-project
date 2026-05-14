@@ -1,10 +1,13 @@
 from datetime import datetime
 from uuid import UUID
+from typing import Optional
 
 import msgspec
 from litestar import get, post
 from litestar.connection import ASGIConnection
+from litestar.datastructures import UploadFile
 from litestar.exceptions import HTTPException
+from litestar.response import Response
 from sqlalchemy import Float, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -18,6 +21,8 @@ class FilmResponse(msgspec.Struct):  # noqa: D101
     description: str
     year_of_release: datetime
     genres: list[str]
+    # image binary is returned via dedicated endpoints
+    image: Optional[str]
 
 
 class RecommendRequest(msgspec.Struct):
@@ -56,7 +61,40 @@ async def search_film(name: str, session: AsyncSession) -> FilmResponse:
         description=result.description,
         year_of_release=result.year_of_release,
         genres=result.genres,
+        image=None,
     )
+
+
+@post('/films/<film_id:uuid>/image')
+async def upload_film_image(
+    film_id: UUID, file: UploadFile, session: AsyncSession
+):
+    """Upload binary image for a film and store it in DB."""
+    film = await session.scalar(select(Film).where(Film.id == film_id))
+    if film is None:
+        raise HTTPException(status_code=404, detail='Film not found')
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail='Empty file')
+
+    film.image_data = data
+    await session.commit()
+
+    return {'uploaded': True}
+
+
+@get('/films/<film_id:uuid>/image')
+async def download_film_image(film_id: UUID, session: AsyncSession) -> Response:
+    """Return stored image binary as a downloadable file."""
+    film = await session.scalar(select(Film).where(Film.id == film_id))
+    if film is None:
+        raise HTTPException(status_code=404, detail='Film not found')
+    if not film.image_data:
+        raise HTTPException(status_code=404, detail='Image not found')
+
+    headers = {'Content-Disposition': f'attachment; filename="{film.name}.bin"'}
+    return Response(content=film.image_data, media_type='application/octet-stream', headers=headers)
 
 
 def _build_recommendation_statement(
