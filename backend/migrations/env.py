@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -11,6 +12,12 @@ from src.database.teble import BaseTable
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Allow overriding the DB URL from environment (set in docker-compose).
+# Priority: API__DATABASE__URL -> DATABASE_URL -> SQLALCHEMY_URL
+db_url = os.getenv('API__DATABASE__URL') or os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_URL')
+if db_url:
+    config.set_main_option('sqlalchemy.url', db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

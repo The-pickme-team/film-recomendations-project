@@ -1,8 +1,9 @@
 from datetime import datetime
+from typing import List
 from uuid import UUID, uuid7
 
 from pgvector.sqlalchemy import HALFVEC
-from sqlalchemy import ARRAY, ForeignKey, Index, MetaData, String, func
+from sqlalchemy import ARRAY, Column, ForeignKey, Index, MetaData, String, Table, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -34,6 +35,28 @@ class BaseTable(DeclarativeBase):
             'pk': 'pk_%(table_name)s',
         }
     )
+
+association_table = Table(
+    "association_table",
+    BaseTable.metadata,
+    Column("users_id", ForeignKey("users.id")),
+    Column("films_id", ForeignKey("films.id")),
+)
+
+
+class User(BaseTable, ID, Time):
+    """ORM model for user metadata."""
+
+    __tablename__ = 'users'
+
+    name: Mapped[str] = mapped_column(unique=True)
+    email: Mapped[str] = mapped_column(unique=True)
+    password_hash: Mapped[str] = mapped_column()
+
+    films: Mapped[List[Film]] = relationship(
+        secondary=association_table,
+    )
+
 
 
 class Film(BaseTable, ID, Time):

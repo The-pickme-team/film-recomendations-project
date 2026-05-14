@@ -9,6 +9,20 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+  migrations:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.migrations
+    container_name: migrations
+    environment:
+      API__DATABASE__URL: postgresql+asyncpg://user:password@postgres:5432/database
+    volumes:
+      - ./backend/config.yaml:/app/config.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
 
   api:
     build:
@@ -22,8 +36,8 @@ services:
     volumes:
       - ./backend/config.yaml:/app/config.yaml
     depends_on:
-      postgres:
-        condition: service_healthy
+       migrations:
+         condition: service_completed_successfully
     deploy:
       resources:
         limits:
