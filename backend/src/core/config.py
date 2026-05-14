@@ -21,6 +21,14 @@ class ApiDatabaseSettings(BaseModel):
     max_overflow: int = 100
 
 
+class JWTSettings(BaseModel):
+    """JWT authentication settings."""
+
+    secret: str = 'your-secret-key-change-in-production'
+    algorithm: str = 'HS256'
+    expiration_minutes: int = 1440  # 24 hours
+
+
 class ApiSettings(BaseModel):
     """API settings loaded from YAML/ENV/secrets."""
 
@@ -29,6 +37,7 @@ class ApiSettings(BaseModel):
     description: str = 'Backend API for film recommendations.'
     dev: bool = True
     database: ApiDatabaseSettings
+    jwt: JWTSettings = JWTSettings()
 
 
 class LoggingSettings(BaseModel):
