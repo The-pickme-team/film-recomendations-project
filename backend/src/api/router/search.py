@@ -45,6 +45,26 @@ class AddUserFilmsResponse(msgspec.Struct):
     total: int
 
 
+class RecommendRequest(msgspec.Struct):
+    film_ids: list[UUID]
+    limit_m: int = 10
+
+
+class RecommendResponse(msgspec.Struct):
+    id: UUID
+    name: str
+    final_score: float
+
+
+class AddUserFilmsRequest(msgspec.Struct):
+    film_ids: list[UUID]
+
+
+class AddUserFilmsResponse(msgspec.Struct):
+    added: int
+    total: int
+
+
 @get('/films/<name:str>')
 async def search_film(name: str, session: AsyncSession) -> FilmResponse:
     """Search for films by name."""

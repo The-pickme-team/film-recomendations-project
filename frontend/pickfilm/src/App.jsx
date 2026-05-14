@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import LoginPage from './LoginPage'
 import PopularPage from './PopularPage'
+import Profile from './Profile'
 
 const initialFilms = Array.from({ length: 5 }, () => '')
 
@@ -38,9 +39,9 @@ function App() {
       <header className="topbar">
         <div className="brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>Pickfilm</div>
         <nav className="navigation">
-          <a href="#">Search</a>
+          <button type="button" className={`nav-btn ${currentPage === 'home' ? 'nav-btn--active' : ''}`} onClick={() => setCurrentPage('home')}>Search</button>
           <span className="divider">|</span>
-          <a href="#">Profile</a>
+          <button type="button" className={`nav-btn ${currentPage === 'profile' ? 'nav-btn--active' : ''}`} onClick={() => setCurrentPage('profile')}>Profile</button>
           <span className="divider">|</span>
           <button type="button" className={`nav-btn ${currentPage === 'popular' ? 'nav-btn--active' : ''}`} onClick={() => setCurrentPage('popular')}>Popular</button>
           <span className="divider">|</span>
@@ -51,6 +52,7 @@ function App() {
       <main className="main-content">
         {currentPage === 'login' && <LoginPage />}
         {currentPage === 'popular' && <PopularPage />}
+        {currentPage === 'profile' && <Profile onSearch={() => setCurrentPage('home')} />}
         {currentPage === 'home' && (
           <>
             <section className="hero-section">
