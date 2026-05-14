@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID, uuid7
 
 from pgvector.sqlalchemy import HALFVEC
+from sqlalchemy import ARRAY, Column, ForeignKey, Index, MetaData, String, Table, func, LargeBinary
 from sqlalchemy import ARRAY, Column, ForeignKey, Index, MetaData, String, Table, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -69,6 +70,7 @@ class Film(BaseTable, ID, Time):
     year_of_release: Mapped[datetime] = mapped_column()
 
     genres: Mapped[list[str]] = mapped_column(ARRAY(String))
+    image_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
     vector: Mapped[Vector] = relationship()
 
     __table_args__ = (
