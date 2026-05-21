@@ -38,6 +38,7 @@ class ApiSettings(BaseModel):
     dev: bool = True
     database: ApiDatabaseSettings
     jwt: JWTSettings = JWTSettings()
+    tmbd_token: str
 
 
 class LoggingSettings(BaseModel):

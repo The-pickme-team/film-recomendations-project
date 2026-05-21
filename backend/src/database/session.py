@@ -12,7 +12,7 @@ class Session:
     __active = False
 
     @classmethod
-    def setap(cls, url: str, *, echo: bool = False):
+    def setup(cls, url: str, *, echo: bool = False):
         """Configure the async database engine and session factory."""
         cls.__engine = create_async_engine(
             url,
@@ -49,7 +49,7 @@ class Session:
     async def dispose(cls):
         """Dispose of the async database engine and cleanup resources."""
         if not cls.__active:
-            raise RuntimeError('Session is not active. Call setap() first.')
+            raise RuntimeError('Session is not active. Call setup() first.')
 
         await cls.__engine.dispose()
 
