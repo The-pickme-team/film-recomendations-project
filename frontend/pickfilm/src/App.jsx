@@ -3,6 +3,7 @@ import './App.css'
 import LoginPage from './LoginPage'
 import PopularPage from './PopularPage'
 import Profile from './Profile'
+import SearchModal from './SearchModal'
 
 const initialFilms = Array.from({ length: 5 }, () => '')
 
@@ -11,12 +12,10 @@ function App() {
   const [showRecommendations, setShowRecommendations] = useState(false)
   const [currentPage, setCurrentPage] = useState('home')
 
+  const [modalIndex, setModalIndex] = useState(null)
+
   const handleAddFilm = (index) => {
-    const title = window.prompt('Enter a film you love:', films[index] || '')
-    if (title === null) return
-    const updated = [...films]
-    updated[index] = title.trim()
-    setFilms(updated)
+    setModalIndex(index)
   }
 
   const handleResetFilm = (index) => {
@@ -67,7 +66,7 @@ function App() {
                     <button
                       type="button"
                       className="picker-button"
-                      onClick={() => handleAddFilm(index)}
+                          onClick={() => handleAddFilm(index)}
                     >
                       <span className="plus">+</span>
                     </button>
@@ -105,6 +104,18 @@ function App() {
                   Clear
                 </button>
               </section>
+            )}
+
+            {modalIndex !== null && (
+              <SearchModal
+                onClose={() => setModalIndex(null)}
+                onSelect={(selectedName) => {
+                  const updated = [...films]
+                  updated[modalIndex] = selectedName
+                  setFilms(updated)
+                  setModalIndex(null)
+                }}
+              />
             )}
           </>
         )}

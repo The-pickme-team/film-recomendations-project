@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.models import LoginRequest, RegisterRequest, UserAuthInfo
 from src.auth.password import password_service
-from src.database.teble import User
+from src.database.table import User
 
 
 class AuthService:

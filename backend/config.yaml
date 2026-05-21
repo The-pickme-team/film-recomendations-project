@@ -1,7 +1,8 @@
 api:
   title: Backend API
-  version: 1.0.0
+  tmbd_token: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkNWFmNjkyODBkZDc0OTNiYjIxOWU4ZjljMmMwZTI0YyIsIm5iZiI6MTc3OTM1MzU5Mi40MDEsInN1YiI6IjZhMGVjN2Y4NDc1MDFiYWU4OTQ2MjEyNSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.B4s0luVrY_HNJ_whJe2sJjJTZ5fzhki-fxEi-eYIIa0"  version: 1.0.0
   description: Backend API for film recommendations.
+  url: "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
   dev: true
   database:
     pool_size: 50
