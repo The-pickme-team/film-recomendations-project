@@ -1,0 +1,18 @@
+FROM python:3.14-slim
+
+WORKDIR /app
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY ./pyproject.toml ./uv.lock ./alembic.ini ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --compile-bytecode --group migrate
+
+COPY ./migration ./migration
+COPY ./src ./src
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/src:$PYTHONPATH"
+
+CMD ["alembic", "upgrade", "head"]

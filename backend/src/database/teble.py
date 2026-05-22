@@ -1,10 +1,8 @@
 from datetime import datetime
-from typing import List
 from uuid import UUID, uuid7
 
 from pgvector.sqlalchemy import HALFVEC
-from sqlalchemy import ARRAY, Column, ForeignKey, Index, MetaData, String, Table, func, LargeBinary
-from sqlalchemy import ARRAY, Column, ForeignKey, Index, MetaData, String, Table, func
+from sqlalchemy import ARRAY, ForeignKey, Index, MetaData, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -29,72 +27,46 @@ class BaseTable(DeclarativeBase):
 
     metadata = MetaData(
         naming_convention={
-            'ix': 'ix_%(column_0_label)s',
-            'uq': 'uq_%(table_name)s_%(column_0_name)s',
-            'ck': 'ck_%(table_name)s_%(constraint_name)s',
-            'fk': 'fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s',
-            'pk': 'pk_%(table_name)s',
+            "ix": "ix_%(column_0_label)s",
+            "uq": "uq_%(table_name)s_%(column_0_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+            "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+            "pk": "pk_%(table_name)s",
         }
     )
-
-association_table = Table(
-    "association_table",
-    BaseTable.metadata,
-    Column("users_id", ForeignKey("users.id")),
-    Column("films_id", ForeignKey("films.id")),
-)
-
-
-class User(BaseTable, ID, Time):
-    """ORM model for user metadata."""
-
-    __tablename__ = 'users'
-
-    name: Mapped[str] = mapped_column(unique=True)
-    email: Mapped[str] = mapped_column(unique=True)
-    password_hash: Mapped[str] = mapped_column()
-
-    films: Mapped[List[Film]] = relationship(
-        secondary=association_table,
-    )
-
 
 
 class Film(BaseTable, ID, Time):
     """ORM model for stored file metadata."""
 
-    __tablename__ = 'films'
+    __tablename__ = "films"
 
     name: Mapped[str] = mapped_column()
     description: Mapped[str] = mapped_column()
     year_of_release: Mapped[datetime] = mapped_column()
 
+    image_path: Mapped[str] = mapped_column()
     genres: Mapped[list[str]] = mapped_column(ARRAY(String))
-    image_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
-    vector: Mapped[Vector] = relationship()
+    vector: Mapped["Vector"] = relationship()
 
-    __table_args__ = (
-        Index('ix_movie_genres_gin', 'genres', postgresql_using='gin'),
-    )
+    __table_args__ = (Index("ix_movie_genres_gin", "genres", postgresql_using="gin"),)
 
 
 class Vector(BaseTable, ID, Time):
     """ORM model for vector metadata."""
 
-    __tablename__ = 'vectors'
+    __tablename__ = "vectors"
 
-    file_id: Mapped[UUID] = mapped_column(
-        ForeignKey('films.id'), primary_key=True
-    )
+    file_id: Mapped[UUID] = mapped_column(ForeignKey("films.id"), primary_key=True)
     vector: Mapped[list[float]] = mapped_column(HALFVEC(1024))
     model: Mapped[str] = mapped_column()
 
     __table_args__ = (
         Index(
-            'idx_vectors_hnsw_cosine',
-            'vector',
-            postgresql_using='hnsw',
-            postgresql_with={'m': 16, 'ef_construction': 64},
-            postgresql_ops={'vector': 'halfvec_cosine_ops'},
+            "idx_vectors_hnsw_cosine",
+            "vector",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"vector": "halfvec_cosine_ops"},
         ),
     )

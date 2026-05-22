@@ -1,9 +1,4 @@
-<%
-_m = (message or "")
-if _m and _m[-1] not in ('.', '?', '!'):
-    _m = _m + '.'
-%>
-"""${_m}
+"""${message}
 
 Revision ID: ${up_revision}
 Revises: ${down_revision | comma,n}
