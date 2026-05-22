@@ -40,7 +40,7 @@ function LoginPage() {
               />
             </div>
 
-            <button type="button" className="login-btn">
+            <button type="button" className="login-btn" disabled>
               Sign up
             </button>
 
@@ -75,9 +75,11 @@ function LoginPage() {
               <span className="forgot-link">Forgot password?</span>
             </div>
 
-            <button type="button" className="login-btn">
+            <button type="button" className="login-btn" disabled>
               Log in
             </button>
+
+            <p className="login-note">Login is disabled in this frontend build.</p>
 
             <div className="login-divider">or</div>
 
