@@ -1,21 +1,54 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import pluginJs from "@eslint/js";
+import pluginReact from "eslint-plugin-react";
+import pluginReactHooks from "eslint-plugin-react-hooks";
+import globals from "globals";
 
-export default defineConfig([
-  globalIgnores(['dist']),
+export default [
   {
-    files: ['**/*.{js,jsx}'],
-    extends: [
-      js.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
+    ignores: [
+      "dist/**", 
+      "build/**", 
+      "node_modules/**", 
+      ".venv/**"
     ],
+  },
+  {
+    files: ["**/*.{js,mjs,cjs,jsx}"],
+    
     languageOptions: {
-      globals: globals.browser,
-      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    
+    plugins: {
+      javascript: pluginJs,
+      react: pluginReact,
+      "react-hooks": pluginReactHooks,
+    },
+    
+    rules: {
+      "no-unused-vars": "warn",
+      "no-undef": "error",
+      "no-const-assign": "error",
+      
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+      "react/react-in-jsx-scope": "off",
+    },
+    
+    settings: {
+      react: {
+        version: "detect",
+      },
     },
   },
-])
+];
