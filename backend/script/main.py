@@ -90,12 +90,12 @@ async def collect_unique_movies(
     genre_mapping: dict,
     existing_names: set[str],
     language: str = "en-US",
-    target_count: int = 1000
+    target_count: int = 1000,
 ) -> list[dict]:
     """Збирає рівно target_count НОВИХ фільмів, гортаючи сторінки TMDB."""
     movies_ready = []
     page = 1
-    processed_tmdb_ids = set() # Щоб уникати дублікатів всередині одного запуску
+    processed_tmdb_ids = set()  # Щоб уникати дублікатів всередині одного запуску
 
     print(f"Починаємо пошук {target_count} нових фільмів для мови {language}...")
 
@@ -126,7 +126,7 @@ async def collect_unique_movies(
             # Пропускаємо, якщо вже обробили цей ID в цьому циклі
             if tmdb_id in processed_tmdb_ids:
                 continue
-            
+
             # Пропускаємо, якщо фільм з такою назвою вже є в Базі Даних
             if title in existing_names:
                 continue
@@ -172,7 +172,9 @@ async def collect_unique_movies(
             movie["image_path"] = f"/media/{filename}" if filename else ""
             movies_ready.append(movie)
 
-        print(f"[{language}] Зібрано {len(movies_ready)} / {target_count} нових фільмів (Оброблено сторінку {page})")
+        print(
+            f"[{language}] Зібрано {len(movies_ready)} / {target_count} нових фільмів (Оброблено сторінку {page})"
+        )
         page += 1
 
     return movies_ready
@@ -188,13 +190,17 @@ async def process_and_save_movies(movies: list[dict]):
     for i in range(0, len(movies), BATCH_SIZE):
         batch = movies[i : i + BATCH_SIZE]
         texts_to_encode = []
-        
+
         for m in batch:
             genres_str = ", ".join(m["genres"])
-            context_text = f"Назва: {m['name']}. Жанри: {genres_str}. Опис: {m['description']}"
+            context_text = (
+                f"Назва: {m['name']}. Жанри: {genres_str}. Опис: {m['description']}"
+            )
             texts_to_encode.append(context_text)
 
-        print(f"Генеруємо вектори для партії {i + 1}-{i + len(batch)} із {len(movies)}...")
+        print(
+            f"Генеруємо вектори для партії {i + 1}-{i + len(batch)} із {len(movies)}..."
+        )
         vectors = await asyncio.to_thread(encode_texts_sync, texts_to_encode)
 
         async with async_session() as db_session:
@@ -234,17 +240,18 @@ async def main():
                 genre_mapping=genres_map,
                 existing_names=existing_names,
                 language=language,
-                target_count=TARGET_MOVIES_PER_LANGUAGE
+                target_count=TARGET_MOVIES_PER_LANGUAGE,
             )
 
             if new_movies:
                 await process_and_save_movies(new_movies)
-                # Додаємо щойно збережені фільми до списку "існуючих", 
+                # Додаємо щойно збережені фільми до списку "існуючих",
                 # щоб наступна мова не дублювала їх, якщо назви співпадають.
                 for m in new_movies:
                     existing_names.add(m["name"])
             else:
                 print(f"Для мови {language} нових фільмів не знайдено.")
+
 
 if __name__ == "__main__":
     uvloop.install()
