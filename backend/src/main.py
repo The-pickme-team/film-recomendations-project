@@ -22,14 +22,14 @@ app = Litestar(
         title=config.app.openapi.title,
         version=config.app.openapi.version,
         description=config.app.openapi.description,
-        servers=[Server(url="/api")]
+        servers=[Server(url='/api')],
     ),
     cors_config=CORSConfig(
         allow_origins=config.app.cors.allowed_origins,
         allow_methods=config.app.cors.allowed_methods,  # ty:ignore[invalid-argument-type]
         allow_headers=config.app.cors.allowed_headers,
     ),
-    compression_config=CompressionConfig(backend="brotli", brotli_gzip_fallback=True),
+    compression_config=CompressionConfig(backend='brotli', brotli_gzip_fallback=True),
     plugins=[
         SQLAlchemyPlugin(
             SQLAlchemyAsyncConfig(
@@ -44,7 +44,7 @@ app = Litestar(
                     pool_pre_ping=True,
                     pool_use_lifo=True,
                     # === Transaction isolation ===
-                    isolation_level="READ COMMITTED",
+                    isolation_level='READ COMMITTED',
                     # === Insert optimization ===
                     insertmanyvalues_page_size=1000,
                     use_insertmanyvalues=True,
