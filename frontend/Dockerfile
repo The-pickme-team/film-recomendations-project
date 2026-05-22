@@ -3,7 +3,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY pickfilm/package*.json ./
-RUN npm ci
+
+RUN npm ci --legacy-peer-deps
 
 COPY pickfilm/. .
 RUN npm run build
