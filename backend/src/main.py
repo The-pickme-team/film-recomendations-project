@@ -1,55 +1,61 @@
-"""Main application entry point with JWT authentication setup."""
-
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-
 from litestar import Litestar
-from litestar.di import Provide
-
-from src.api.router.auth import login, register
-from src.api.router.search import (
-    add_user_films,
-    recommend_films,
-    recommend_for_me,
-    search_film,
+from litestar.config.compression import CompressionConfig
+from litestar.config.cors import CORSConfig
+from litestar.openapi import OpenAPIConfig
+from litestar.plugins.sqlalchemy import (
+    AsyncSessionConfig,
+    SQLAlchemyAsyncConfig,
+    SQLAlchemyPlugin,
 )
-from src.auth.token import token_service
-from src.core.config import config
-from src.database.session import Session
+from sqlalchemy.ext.asyncio import create_async_engine
 
-
-@asynccontextmanager
-async def connection(app: Litestar) -> AsyncGenerator[None]:
-    """Database connection lifespan manager."""
-    Session.setap(
-        config.api.database.url.encoded_string(),
-        echo=config.api.dev,
-    )
-    yield
-    await Session.dispose()
-    print('Disconnecting from database...')
-
-
-async def provide_session() -> AsyncGenerator:
-    """Provide database session to route handlers."""
-    async for session in Session.session():
-        yield session
-
+from core.settings import config
+from router.search import recommend_films, search_films_handler
 
 app = Litestar(
     route_handlers=[
-        # Auth routes (public)
-        register,
-        login,
-        # Search routes (require authentication)
-        search_film,
+        search_films_handler,
         recommend_films,
-        add_user_films,
-        recommend_for_me,
     ],
-    lifespan=[connection],
-    dependencies={
-        'session': Provide(provide_session),
-    },
-    middleware=[token_service.get_middleware()],
+    openapi_config=OpenAPIConfig(
+        title=config.app.openapi.title,
+        version=config.app.openapi.version,
+        description=config.app.openapi.description,
+    ),
+    cors_config=CORSConfig(
+        allow_origins=config.app.cors.allowed_origins,
+        allow_methods=config.app.cors.allowed_methods,  # ty:ignore[invalid-argument-type]
+        allow_headers=config.app.cors.allowed_headers,
+    ),
+    compression_config=CompressionConfig(backend="brotli", brotli_gzip_fallback=True),
+    plugins=[
+        SQLAlchemyPlugin(
+            SQLAlchemyAsyncConfig(
+                engine_instance=create_async_engine(
+                    config.database.url.composite(),
+                    echo=True,
+                    # === Connection pool ===
+                    pool_size=config.database.pool_size,
+                    max_overflow=config.database.max_overflow,
+                    pool_timeout=30,
+                    pool_recycle=1800,
+                    pool_pre_ping=True,
+                    pool_use_lifo=True,
+                    # === Transaction isolation ===
+                    isolation_level="READ COMMITTED",
+                    # === Insert optimization ===
+                    insertmanyvalues_page_size=1000,
+                    use_insertmanyvalues=True,
+                    # === Query cache ===
+                    query_cache_size=1200,
+                    # === Other ===
+                    connect_args={},
+                ),
+                session_config=AsyncSessionConfig(
+                    autoflush=False,
+                    expire_on_commit=False,
+                ),
+            )
+        )
+    ],
 )

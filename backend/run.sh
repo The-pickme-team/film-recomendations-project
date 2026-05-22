@@ -1,5 +1,7 @@
-#!/bin/sh
-exec granian src.main:app \
-    --host 0.0.0.0 \
-    --port 8000 \
-    --interface asgi
+#!/usr/bin/env sh
+echo "Starting Granian ASGI server..."
+exec granian \
+    --uds /tmp/sockets/granian.sock \
+    --uds-permissions 0666 \
+    --interface asgi \
+    src.main:app

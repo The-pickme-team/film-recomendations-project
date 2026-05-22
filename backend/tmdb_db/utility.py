@@ -1,26 +1,44 @@
-import aiohttp
 import asyncio
-from sentence_transformers import SentenceTransformer
 from datetime import datetime
-from src.database.table import Film, Vector
-from src.database.session import Session
-from src.core.config import config
+import os
+
+import aiohttp
+from sentence_transformers import SentenceTransformer
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from uuid import uuid7
 
-TMBD_TOKEN = config.api.tmdb_token
+from src.core.settings import config
+from src.database.table import Film, Vector
+
+TMDB_TOKEN = os.getenv("TMDB_API_KEY")
 NUM_PAGES_TO_FETCH = 5
 MAX_CONCURRENT_REQUESTS = 5
 
 HEADERS = {
     "Authorization": f"Bearer {TMDB_TOKEN}",
-    "accept": "application/json"
+    "accept": "application/json",
 }
 
-TMBD_GENRES_MAP = {
-    28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
-    99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
-    27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance", 878: "Sci-Fi",
-    10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
+TMDB_GENRES_MAP = {
+    28: "Action",
+    12: "Adventure",
+    16: "Animation",
+    35: "Comedy",
+    80: "Crime",
+    99: "Documentary",
+    18: "Drama",
+    10751: "Family",
+    14: "Fantasy",
+    36: "History",
+    27: "Horror",
+    10402: "Music",
+    9648: "Mystery",
+    10749: "Romance",
+    878: "Sci-Fi",
+    10770: "TV Movie",
+    53: "Thriller",
+    10752: "War",
+    37: "Western",
 }
 
 print("Neural network is loading...")
@@ -36,20 +54,6 @@ async def fetch_movies(session: aiohttp.ClientSession, page: int = 1):
         return await response.json()
 
 
-async def download_image(session: aiohttp.ClientSession, poster_path: str) -> bytes | None:
-    if not poster_path:
-        return None
-    url = f"https://image.tmdb.org/t/p/w500{poster_path}"
-    try:
-        async with session.get(url) as response:
-            if response.status == 200:
-                return await response.read()
-            return None
-    except Exception as e:
-        print(f"Failed to load poster {poster_path}: {e}")
-        return None
-
-
 def get_vector(text: str) -> list[float]:
     if not text:
         text = "No description available."
@@ -57,15 +61,18 @@ def get_vector(text: str) -> list[float]:
     return embedding.tolist()
 
 
-async def save_movie(semaphore: asyncio.Semaphore, session: aiohttp.ClientSession, db_session, movie_data: dict):    
+async def save_movie(
+    semaphore: asyncio.Semaphore,
+    session: aiohttp.ClientSession,
+    db_session,
+    movie_data: dict,
+):
     if not movie_data.get("release_date") or not movie_data.get("overview"):
         return
-    
     title = movie_data.get("title", "Unknown")
 
     async with semaphore:
         print(f"Processing film {title}.")
-        image_bytes = await download_image(session, movie_data.get("poster_path"))
         vector_data = await asyncio.to_thread(get_vector, movie_data["overview"])
         try:
             release_date = datetime.strptime(movie_data['release_date'], '%Y-%m-%d')
@@ -73,18 +80,19 @@ async def save_movie(semaphore: asyncio.Semaphore, session: aiohttp.ClientSessio
             release_date = datetime.now()
 
         genre_ids = movie_data.get("genre_ids", [])
-        genres_list = [TMBD_GENRES_MAP[g_id] for g_id in genre_ids if g_id in TMBD_GENRES_MAP]
+        genres_list = [TMDB_GENRES_MAP[g_id] for g_id in genre_ids if g_id in TMDB_GENRES_MAP]
         if not genres_list:
             genres_list = ["Unknown"]
 
         film_id = uuid7()
 
         film = Film(
-            id=film_id, name=movie_data['title'],
+            id=film_id,
+            name=movie_data['title'],
             description=movie_data['overview'],
-            year_of_release = release_date, 
+            year_of_release=release_date,
             genres=genres_list,
-            image_data=image_bytes
+            image_path=movie_data.get("poster_path") or "",
         )
 
         film_vector = Vector(
@@ -97,13 +105,15 @@ async def save_movie(semaphore: asyncio.Semaphore, session: aiohttp.ClientSessio
 
 
 async def main():
-    Session.setup(
-        config.api.database.url.encoded_string(), echo=False
-    )
+    if not TMDB_TOKEN:
+        raise RuntimeError("TMDB_API_KEY is not configured")
+
+    engine = create_async_engine(config.database.url.composite(), echo=False)
+    session_factory = async_sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
-    async for db_session in Session.session():
+    async with session_factory() as db_session:
         async with aiohttp.ClientSession() as http_session:
             print(f"Fetching data. Number of pages: {NUM_PAGES_TO_FETCH}.")
 
@@ -116,17 +126,20 @@ async def main():
 
             if not all_movies:
                 print("No films found on these pages.")
-                break
-        
+                await engine.dispose()
+                return
+
             print(f"Processing {len(all_movies)} movies.")
-            pages_tasks = [save_movie(semaphore, http_session, db_session, movie) for movie in all_movies] 
+            pages_tasks = [
+                save_movie(semaphore, http_session, db_session, movie)
+                for movie in all_movies
+            ]
             await asyncio.gather(*pages_tasks)
 
             print(f"Saving parsed movies to the database.")
             await db_session.commit()
-        break
 
-    await Session.dispose()
+    await engine.dispose()
     print("Films have been successfully added to database.")
 
 
