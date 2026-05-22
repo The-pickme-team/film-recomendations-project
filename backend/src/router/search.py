@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import case, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.teble import Film, Vector
+from database.table import Film, Vector
 
 
 class FilmSearchResponse(BaseModel):

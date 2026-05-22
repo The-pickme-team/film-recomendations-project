@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from src.database.teble import BaseTable
+from src.database.table import BaseTable
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -94,5 +94,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
-TMDB_TOKEN=eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmOTBmNmZjNjViYzk1YTJjNjg4MmIwYWQyNzRmZDc0YiIsIm5iZiI6MTc3OTMwNjM1NC4wNDQ5OTk4LCJzdWIiOiI2YTBlMGY3MmE1MjllOWRiOWRmZjRjNzkiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4Wl1umdIrcr_4irueQsBG0B43L7UnAdtNj1C_Me9Kc
