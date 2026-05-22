@@ -3,7 +3,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY pickfilm/package*.json ./
-RUN npm ci
+# try a clean install using lockfile; if it fails, fall back to installing production deps
+RUN npm ci --omit=dev || npm install --production --omit=dev
 
 COPY pickfilm/. .
 RUN npm run build
