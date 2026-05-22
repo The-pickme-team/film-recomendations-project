@@ -1,4 +1,4 @@
-const API_BASE = ''
+const API_BASE = 'http://127.0.0.1/api'
 
 async function readJson(response) {
   const text = await response.text()
