@@ -14,18 +14,49 @@ async function readJson(response) {
   }
 }
 
-function normalizeFilm(film) {
+export function normalizeFilm(film) {
+  const name = film.name ?? film.title ?? 'Untitled film'
+  const year = film.year_of_release ?? film.year ?? ''
+  let imagePath = film.image_path ?? film.imagePath ?? ''
+
+  if (!imagePath) {
+    imagePath = createPosterDataUri(name, year)
+  }
+
   return {
     id: String(film.id),
-    name: film.name ?? film.title ?? 'Untitled film',
+    name,
     description: film.description ?? '',
-    year: film.year_of_release ?? film.year ?? '',
-    imagePath: film.image_path ?? film.imagePath ?? '',
+    year,
+    imagePath,
     genres: Array.isArray(film.genres) ? film.genres : [],
   }
 }
 
-function extractErrorMessage(payload, fallback) {
+function createPosterDataUri(name, year) {
+  const title = (name || 'Untitled').slice(0, 30)
+  const yr = year ? String(year) : ''
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns='http://www.w3.org/2000/svg' width='400' height='600' viewBox='0 0 400 600'>
+  <defs>
+    <linearGradient id='g' x1='0' x2='0' y1='0' y2='1'>
+      <stop offset='0' stop-color='#ff9de6' stop-opacity='0.92'/>
+      <stop offset='1' stop-color='#6b21a8' stop-opacity='0.92'/>
+    </linearGradient>
+  </defs>
+  <rect width='100%' height='100%' fill='url(#g)' rx='18' />
+  <text x='50%' y='46%' font-family='Arial, Helvetica, sans-serif' font-size='20' fill='white' text-anchor='middle'>${escapeXml(title)}</text>
+  <text x='50%' y='54%' font-family='Arial, Helvetica, sans-serif' font-size='14' fill='rgba(255,255,255,0.9)' text-anchor='middle'>${escapeXml(yr)}</text>
+</svg>`
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
+function escapeXml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+}
+
+export function extractErrorMessage(payload, fallback) {
   if (typeof payload === 'string' && payload.trim()) {
     return payload
   }
@@ -59,6 +90,22 @@ export function formatFilmYear(value) {
   return text
 }
 
+export async function fetchPopularFilms(limit = 15) {
+  try {
+    const response = await fetch(`${API_BASE}/films/popular?limit=${encodeURIComponent(limit)}`)
+    const payload = await readJson(response)
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch popular films')
+    }
+
+    return Array.isArray(payload) ? payload.map(normalizeFilm) : []
+  } catch (error) {
+    console.warn('Backend popular films fetch failed:', error)
+    throw error
+  }
+}
+
 export async function searchFilms(query) {
   try {
     const response = await fetch(`${API_BASE}/films/search?film_name=${encodeURIComponent(query)}`, {
@@ -78,7 +125,6 @@ export async function searchFilms(query) {
     console.warn('Backend search failed, using local demo films:', error)
   }
 
-  // Fallback to local demo search
   const lowerQuery = query.toLowerCase()
   return DEMO_FILMS.filter(
     (film) =>
@@ -88,37 +134,39 @@ export async function searchFilms(query) {
   )
 }
 
+export async function recommendFilms(filmIds, limit = 3) {
+  if (!filmIds || filmIds.length === 0) {
+    throw new Error('No film IDs provided for recommendations')
+  }
 
-export async function recommendFilms(filmIds, limit = 12) {
-  const attempts = [
-    JSON.stringify(filmIds),
-    JSON.stringify({ film_ids: filmIds, limit }),
-  ]
+  const url = `${API_BASE}/films/recommend?limit=${encodeURIComponent(limit)}`
 
-  let lastError = null
+  console.log('Recommend URL:', url)
+  console.log('Film IDs:', filmIds)
 
-  for (const body of attempts) {
-    const response = await fetch(`${API_BASE}/films/recommend?limit=${limit}`, {
+  try {
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filmIds),
     })
 
     const payload = await readJson(response)
+    console.log('Recommend response status:', response.status, 'payload:', payload)
 
-    if (response.ok) {
-      return Array.isArray(payload) ? payload.map(normalizeFilm) : []
+    if (!response.ok) {
+      const errorMsg = extractErrorMessage(payload, `Recommendation failed (${response.status})`)
+      console.error('Backend error:', errorMsg)
+      throw new Error(errorMsg)
     }
 
-    lastError = new Error(extractErrorMessage(payload, 'Recommendation request failed'))
+    return Array.isArray(payload) ? payload.map(normalizeFilm) : []
+  } catch (error) {
+    console.error('recommendFilms error:', error)
+    throw error
   }
-
-  throw lastError || new Error('Recommendation request failed')
 }
 
-// Fallback demo films for when backend is empty or unavailable
 export const DEMO_FILMS = [
   {
     id: '1',
