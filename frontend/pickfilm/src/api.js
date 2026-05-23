@@ -89,33 +89,31 @@ export async function searchFilms(query) {
 }
 
 
-export async function recommendFilms(filmIds, limit = 12) {
-  const attempts = [
-    JSON.stringify(filmIds),
-    JSON.stringify({ film_ids: filmIds, limit }),
-  ]
-
-  let lastError = null
-
-  for (const body of attempts) {
-    const response = await fetch(`${API_BASE}/films/recommend?limit=${limit}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
-    })
-
-    const payload = await readJson(response)
-
-    if (response.ok) {
-      return Array.isArray(payload) ? payload.map(normalizeFilm) : []
-    }
-
-    lastError = new Error(extractErrorMessage(payload, 'Recommendation request failed'))
+export async function recommendFilms(filmIds, limit = 3) {
+  // Backend expects film_ids as query parameters. Build a query string like
+  // /films/recommend?limit=12&film_ids=ID1&film_ids=ID2...
+  const qs = new URLSearchParams()
+  qs.append('limit', String(limit))
+  for (const id of filmIds) {
+    qs.append('film_ids', String(id))
   }
 
-  throw lastError || new Error('Recommendation request failed')
+  const url = `${API_BASE}/films/recommend?${qs.toString()}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // body can be empty when film_ids are in query; keep an empty object for safety
+    body: JSON.stringify({}),
+  })
+
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(payload, 'Recommendation request failed'))
+  }
+
+  return Array.isArray(payload) ? payload.map(normalizeFilm) : []
 }
 
 // Fallback demo films for when backend is empty or unavailable
