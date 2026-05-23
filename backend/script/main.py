@@ -185,7 +185,7 @@ async def process_and_save_movies(movies: list[dict]):
     if not movies:
         return
 
-    BATCH_SIZE = 1000
+    BATCH_SIZE = 100
 
     for i in range(0, len(movies), BATCH_SIZE):
         batch = movies[i : i + BATCH_SIZE]
