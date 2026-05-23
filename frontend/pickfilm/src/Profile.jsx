@@ -23,7 +23,13 @@ function Profile({ films, onSearch, onRemoveFilm }) {
         <div className="profile-grid">
           {films.map((film) => (
             <article key={film.id} className="profile-card">
-              <div className="profile-card__poster" />
+                <div className="profile-card__poster">
+                  {film.imagePath ? (
+                    <img src={film.imagePath} alt={film.name} />
+                  ) : (
+                    <span>{film.name}</span>
+                  )}
+                </div>
               <div className="profile-card__body">
                 <h3>{film.name}</h3>
                 <p>{film.description}</p>
