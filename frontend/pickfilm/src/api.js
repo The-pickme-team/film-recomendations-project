@@ -89,31 +89,38 @@ export async function searchFilms(query) {
 }
 
 
-export async function recommendFilms(filmIds, limit = 3) {
-  // Backend expects film_ids as query parameters. Build a query string like
-  // /films/recommend?limit=12&film_ids=ID1&film_ids=ID2...
-  const qs = new URLSearchParams()
-  qs.append('limit', String(limit))
-  for (const id of filmIds) {
-    qs.append('film_ids', String(id))
+export async function recommendFilms(filmIds, limit = 12) {
+  if (!filmIds || filmIds.length === 0) {
+    throw new Error('No film IDs provided for recommendations')
   }
 
-  const url = `${API_BASE}/films/recommend?${qs.toString()}`
+  // Send film_ids in JSON body, limit in query string
+  const url = `${API_BASE}/films/recommend?limit=${encodeURIComponent(limit)}`
+  
+  console.log('Recommend URL:', url)
+  console.log('Film IDs:', filmIds)
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    // body can be empty when film_ids are in query; keep an empty object for safety
-    body: JSON.stringify({}),
-  })
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filmIds),
+    })
 
-  const payload = await readJson(response)
+    const payload = await readJson(response)
+    console.log('Recommend response status:', response.status, 'payload:', payload)
 
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(payload, 'Recommendation request failed'))
+    if (!response.ok) {
+      const errorMsg = extractErrorMessage(payload, `Recommendation failed (${response.status})`)
+      console.error('Backend error:', errorMsg)
+      throw new Error(errorMsg)
+    }
+
+    return Array.isArray(payload) ? payload.map(normalizeFilm) : []
+  } catch (error) {
+    console.error('recommendFilms error:', error)
+    throw error
   }
-
-  return Array.isArray(payload) ? payload.map(normalizeFilm) : []
 }
 
 // Fallback demo films for when backend is empty or unavailable

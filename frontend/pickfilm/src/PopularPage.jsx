@@ -78,7 +78,7 @@ function PopularPage({ profileFilms, recommendedFilms, onAddToProfile }) {
 
       <section className="pop-section">
         <h2 className="pop-section__title">🔥 Popular right now!</h2>
-        <p className="pop-section__sub">Titles everyone is watching this week ↴</p>
+        <p className="pop-section__sub">If you want to see pictures here, buy a pro+ subscription. ↴</p>
 
         <div className="slider-wrap">
           <button type="button" className="slider-arrow left" onClick={scrollLeft}>

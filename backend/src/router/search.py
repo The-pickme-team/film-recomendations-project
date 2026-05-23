@@ -87,12 +87,23 @@ async def _get_seed_genres_and_vector(film_ids: list[UUID], db_session: AsyncSes
 
 @post("/films/recommend")
 async def recommend_films(
-    film_ids: list[UUID],
+    data: list[str],
     db_session: AsyncSession,
     limit: int = 20,
 ) -> list[FilmSearchResponse]:
+    """Recommend films based on a list of user-selected film IDs.
+    
+    Expects JSON array of film IDs in body, and optional limit in query.
+    """
 
-    if not film_ids:
+    if not data:
+        return []
+
+    # Convert string IDs to UUID
+    try:
+        film_ids: list[UUID] = [UUID(str(fid)) for fid in data]
+    except (ValueError, TypeError) as e:
+        print(f"DEBUG: Error converting film IDs to UUID: {e}, data={data}")
         return []
 
     avg_vector, seed_genres = await _get_seed_genres_and_vector(film_ids, db_session)
