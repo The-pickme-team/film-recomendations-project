@@ -111,7 +111,7 @@ function PopularPage({ profileFilms, recommendedFilms, onAddToProfile }) {
 
       <section className="pop-section">
         <h2 className="pop-section__title">🎯 Recommendations based on your added movies</h2>
-        <p className="pop-section__sub">Picked just for you ❤︎⁠</p>
+        <p className="pop-section__sub">If you want to see pictures here, buy a pro+ subscription ❤︎⁠</p>
         <div className="popular-context">
           <span>{profileFilms.length ? `${profileFilms.length} films in your profile` : 'No films added yet'}</span>
         </div>
