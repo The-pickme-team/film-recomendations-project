@@ -3,6 +3,7 @@ from litestar import Litestar
 from litestar.config.compression import CompressionConfig
 from litestar.config.cors import CORSConfig
 from litestar.openapi import OpenAPIConfig
+from litestar.openapi.spec import Server
 from litestar.plugins.sqlalchemy import (
     AsyncSessionConfig,
     SQLAlchemyAsyncConfig,
@@ -22,7 +23,7 @@ app = Litestar(
         title=config.app.openapi.title,
         version=config.app.openapi.version,
         description=config.app.openapi.description,
-        servers=[Server(url='/api')],
+        servers=[Server(url="/api")],
     ),
     cors_config=CORSConfig(
         allow_origins=config.app.cors.allowed_origins,
