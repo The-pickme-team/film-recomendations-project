@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { formatFilmYear } from './api'
 import './PopularPage.css'
 
 // Temporary films for the "popular right now" section
@@ -25,7 +26,19 @@ const RECOMMENDED = [
   {id: 16, title: 'I Saw the TV Glow', year: 2024, rating: '6.9', genre: 'Drama'},
 ]
 
-function PopularPage() {
+function getFilmTitle(movie) {
+  return movie.title ?? movie.name ?? 'Untitled film'
+}
+
+function getFilmMeta(movie) {
+  const year = formatFilmYear(movie.year ?? movie.year_of_release ?? '')
+  const genre = movie.genre ?? (Array.isArray(movie.genres) ? movie.genres.join(', ') : '')
+  const rating = movie.rating ?? ''
+
+  return { year, genre, rating }
+}
+
+function PopularPage({ profileFilms, recommendedFilms, onAddToProfile }) {
   const scrollRef = useRef(null)
   const getScrollStep = () => {
     const track = scrollRef.current
@@ -75,14 +88,14 @@ function PopularPage() {
           <div className="slider-track" ref={scrollRef}>
             {POPULAR_NOW.map(movie => (
               <div key={movie.id} className="pop-card pop-card--small">
-                <div className="pop-card__poster" />
+                <div className="pop-card__poster" style={{background: `linear-gradient(135deg, hsl(${movie.id * 45}, 70%, 50%), hsl(${movie.id * 45 + 60}, 70%, 60%))`}} />
                 <div className="pop-card__info">
                   <strong className="pop-card__title">{movie.title}</strong>
                   <div className="pop-card__meta">
                     <span>{movie.year} · {movie.genre}</span>
                     <span className="pop-card__rating">★ {movie.rating}</span>
                   </div>
-                  <button type="button" className="pop-card__btn">+ Add to list</button>
+                  <button type="button" className="pop-card__btn" onClick={() => onAddToProfile(movie)}>+ Add to profile</button>
                 </div>
               </div>
             ))}
@@ -99,20 +112,29 @@ function PopularPage() {
       <section className="pop-section">
         <h2 className="pop-section__title">🎯 Recommendations based on your added movies</h2>
         <p className="pop-section__sub">Picked just for you ❤︎⁠</p>
+        <div className="popular-context">
+          <span>{profileFilms.length ? `${profileFilms.length} films in your profile` : 'No films added yet'}</span>
+        </div>
+
         <div className="pop-grid--large">
-          {RECOMMENDED.map(movie => (
-            <div key={movie.id} className="pop-card pop-card--large">
-              <div className="pop-card__poster" />
-              <div className="pop-card__info">
-                <strong className="pop-card__title">{movie.title}</strong>
-                <div className="pop-card__meta">
-                  <span>{movie.year} · {movie.genre}</span>
-                  <span className="pop-card__rating">★ {movie.rating}</span>
+          {(recommendedFilms.length ? recommendedFilms : RECOMMENDED).map(movie => {
+            const meta = getFilmMeta(movie)
+
+            return (
+              <div key={movie.id} className="pop-card pop-card--large">
+                <div className="pop-card__poster" style={{background: movie.imagePath ? `url(${movie.imagePath}) center/cover` : `linear-gradient(135deg, hsl(${(movie.id ?? movie.rating ?? 1) * 45}, 70%, 50%), hsl(${(movie.id ?? movie.rating ?? 1) * 45 + 60}, 70%, 60%))`}}>
+                  {movie.imagePath && <img src={movie.imagePath} alt={getFilmTitle(movie)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
                 </div>
-                <button type="button" className="pop-card__btn">+ Add to list</button>
+                <div className="pop-card__info">
+                  <strong className="pop-card__title">{getFilmTitle(movie)}</strong>
+                  <div className="pop-card__meta">
+                    <span>{meta.year || 'Unknown year'}{meta.genre ? ` · ${meta.genre}` : ''}</span>
+                    <span className="pop-card__rating">{meta.rating ? `★ ${meta.rating}` : '★ —'}</span>
+                  </div>
+                  <button type="button" className="pop-card__btn" onClick={() => onAddToProfile(movie)}>+ Add to profile</button>
+                </div>
               </div>
-            </div>
-          ))}
+          )})}
         </div>
       </section>
 
