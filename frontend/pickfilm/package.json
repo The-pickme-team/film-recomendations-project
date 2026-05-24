@@ -13,25 +13,9 @@
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.0",
-<<<<<<< HEAD
-    "@rolldown/plugin-babel": "^0.2.3",
-=======
->>>>>>> e60f933675489a9ec840fb96ef54b0a0ff03c127
-    "@rolldown/plugin-babel": "^0.2.3",
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.3",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "babel-plugin-react-compiler": "^1.0.0",
-<<<<<<< HEAD
-    "vite": "^8.0.10",
-    "@rolldown/plugin-babel": "^0.2.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "babel-plugin-react-compiler": "^1.0.0"
-=======
-    "vite": "^8.0.10"
->>>>>>> e60f933675489a9ec840fb96ef54b0a0ff03c127
+    "@types/react-dom": "^19.2.3"
   }
 }
