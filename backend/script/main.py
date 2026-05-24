@@ -95,11 +95,12 @@ async def collect_unique_movies(
     """Збирає рівно target_count НОВИХ фільмів, гортаючи сторінки TMDB."""
     movies_ready = []
     page = 1
+    max_pages = 500
     processed_tmdb_ids = set()  # Щоб уникати дублікатів всередині одного запуску
 
     print(f"Починаємо пошук {target_count} нових фільмів для мови {language}...")
 
-    while len(movies_ready) < target_count:
+    while len(movies_ready) < target_count and page <= max_pages:
         url = f"{BASE_URL}/movie/popular"
         params: dict[str, str | int] = {
             "api_key": get_tmdb_api_key(),
@@ -108,7 +109,16 @@ async def collect_unique_movies(
         }
 
         async with session.get(url, params=params) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError as exc:
+                if exc.status == 400:
+                    print(
+                        f"❌ TMDB повернув 400 на сторінці {page}. Максимум для popular — {max_pages}. Зупиняємо збір."
+                    )
+                    break
+                raise
+
             data = await response.json()
 
         results = data.get("results", [])
@@ -176,6 +186,9 @@ async def collect_unique_movies(
             f"[{language}] Зібрано {len(movies_ready)} / {target_count} нових фільмів (Оброблено сторінку {page})"
         )
         page += 1
+
+    if page > max_pages:
+        print(f"⚠️ Досягнуто ліміт TMDB popular pages ({max_pages}); зупиняємо збір.")
 
     return movies_ready
 

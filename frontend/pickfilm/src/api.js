@@ -139,16 +139,23 @@ export async function recommendFilms(filmIds, limit = 3) {
     throw new Error('No film IDs provided for recommendations')
   }
 
-  const url = `${API_BASE}/films/recommend?limit=${encodeURIComponent(limit)}`
+  // 1. Формируем Query-параметры. 
+  // Повторяем film_ids для каждого ID из массива, как это делает Swagger.
+  const queryParams = new URLSearchParams()
+  filmIds.forEach(id => queryParams.append('film_ids', id))
+  queryParams.append('limit', String(limit))
+
+  // 2. Собираем полный URL
+  const url = `${API_BASE}/films/recommend?${queryParams.toString()}`
 
   console.log('Recommend URL:', url)
-  console.log('Film IDs:', filmIds)
+  console.log('Film IDs (body):', filmIds)
 
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(filmIds),
+      body: JSON.stringify(filmIds), // Оставляем тело, так как Swagger требует его тоже
     })
 
     const payload = await readJson(response)
