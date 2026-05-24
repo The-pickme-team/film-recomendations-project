@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { formatFilmYear } from './api'
+import { formatFilmYear, DEMO_FILMS, normalizeFilm } from './api'
 import './PopularPage.css'
 
 // Temporary films for the "popular right now" section
@@ -117,7 +117,7 @@ function PopularPage({ profileFilms, recommendedFilms, onAddToProfile }) {
         </div>
 
         <div className="pop-grid--large">
-          {(recommendedFilms.length ? recommendedFilms : RECOMMENDED).map(movie => {
+          {(recommendedFilms.length ? recommendedFilms : DEMO_FILMS.map(normalizeFilm).slice(0, 8)).map(movie => {
             const meta = getFilmMeta(movie)
 
             return (

@@ -5,9 +5,9 @@ import PopularPage from './PopularPage'
 import Profile from './Profile'
 import {
   DEMO_FILMS,
-  fetchPopularFilms,
   normalizeFilm,
   recommendFilms,
+  searchBackendFilms,
   searchFilms,
 } from './api'
 
@@ -24,12 +24,37 @@ function makeManualFilm(title, index) {
   })
 }
 
+function isUuidLike(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value))
+}
+
+async function resolveBackendFilm(movie) {
+  const selected = normalizeFilm(movie)
+
+  if (isUuidLike(selected.id)) {
+    return selected
+  }
+
+  try {
+    const query = selected.name || movie.title || ''
+    if (!query) {
+      return selected
+    }
+
+    const matches = await searchBackendFilms(query)
+    const exactMatch = matches.find((item) => item.name.toLowerCase() === selected.name.toLowerCase())
+    return exactMatch ?? matches[0] ?? selected
+  } catch (error) {
+    console.warn('Could not resolve backend film for profile:', error)
+    return selected
+  }
+}
+
 function App() {
   const [films, setFilms] = useState(initialFilms)
   const [showRecommendations, setShowRecommendations] = useState(false)
   const [currentPage, setCurrentPage] = useState('home')
   const [profileFilms, setProfileFilms] = useState([])
-  const [popularFilms, setPopularFilms] = useState([])
   const [recommendedFilms, setRecommendedFilms] = useState([])
   const [statusMessage, setStatusMessage] = useState('')
   const [filmModalOpen, setFilmModalOpen] = useState(false)
@@ -41,25 +66,7 @@ function App() {
   const statusTimerRef = useRef(null)
   const filmModalTimerRef = useRef(null)
 
-  useEffect(() => {
-    let active = true
 
-    fetchPopularFilms(15)
-      .then((items) => {
-        if (active) {
-          setPopularFilms(items)
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setPopularFilms(DEMO_FILMS.map(normalizeFilm).slice(0, 15))
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
 
   const profileFilmIds = useMemo(
     () => new Set(profileFilms.map((film) => String(film.id))),
@@ -156,36 +163,52 @@ function App() {
   }
 
   const handleGenerate = async () => {
-    const selectedFilms = profileFilms.filter(Boolean)
-    const filmIds = selectedFilms.map((film) => film.id)
+  // Исправлено: берем фильмы из `films` (выбранные карточки на главном экране), а не из профиля
+  const selectedFilms = films.filter(Boolean)
 
-    setShowRecommendations(true)
-
-    if (!filmIds.length) {
-      setRecommendedFilms([])
-      upsertStatus('Add at least one film to profile first')
-      setCurrentPage('home')
-      return
-    }
-
-    try {
-      const generated = await recommendFilms(filmIds, 12)
-      setRecommendedFilms(generated)
-      upsertStatus('Recommendations updated')
-    } catch (error) {
-      console.error('Generate recommendations failed:', error)
-      setRecommendedFilms(DEMO_FILMS.map(normalizeFilm).slice(0, 3))
-      upsertStatus(`Failed to fetch recommendations: ${error.message}`)
-    }
-    setCurrentPage('home')
+  if (!selectedFilms.length) {
+    upsertStatus('Add at least one film to the slots first')
+    return
   }
 
-  const handleAddToProfile = (movie) => {
-    const selected = normalizeFilm(movie)
+  const resolvedFilms = []
+  for (const film of selectedFilms) {
+    resolvedFilms.push(await resolveBackendFilm(film))
+  }
+
+  const filmIds = resolvedFilms.map((film) => film.id)
+  // Убираем жесткую блокировку по UUID, чтобы дать бэкенду шанс обработать запросы,
+  // либо оставляем, если бэкенд строго падает на не-UUID.
+  const uuidFilmIds = filmIds.filter(isUuidLike)
+
+  setShowRecommendations(true)
+
+  // Если настоящих UUID из базы нет, пробуем отправить всё что есть, 
+  // либо выводим предупреждение БЕЗ досрочного return, если бэкенд умеет их переваривать.
+  if (!uuidFilmIds.length) {
+    console.warn('No UUIDs found, trying to send raw IDs:', filmIds)
+  }
+
+  try {
+    // Передаем id на бэкенд. Если бэкенд строго требует UUID, передайте uuidFilmIds
+    const idsToSend = uuidFilmIds.length > 0 ? uuidFilmIds : filmIds
+    
+    const generated = await recommendFilms(idsToSend, 12)
+    setRecommendedFilms(generated)
+    upsertStatus('Recommendations updated')
+  } catch (error) {
+    console.error('Generate recommendations failed:', error)
+    setRecommendedFilms(DEMO_FILMS.map(normalizeFilm).slice(0, 3))
+    upsertStatus(`Failed to fetch recommendations: ${error.message}`)
+  }
+}
+
+  const handleAddToProfile = async (movie) => {
+    const selected = await resolveBackendFilm(movie)
     let notification = `${selected.name} added to profile`
 
     setProfileFilms((current) => {
-      const exists = current.some((film) => String(film.id) === selected.id)
+      const exists = current.some((film) => String(film.id) === String(selected.id))
       if (exists) {
         notification = `${selected.name} is already in profile`
         return current
@@ -223,7 +246,6 @@ function App() {
         {currentPage === 'popular' && (
           <PopularPage
             profileFilms={profileFilms}
-            popularFilms={popularFilms}
             recommendedFilms={recommendedFilms}
             onAddToProfile={handleAddToProfile}
             isFilmInProfile={isFilmInProfile}
@@ -336,11 +358,16 @@ function App() {
 
                     return (
                       <div key={item.id} className="recommendation-card">
-                        <div
-                          className="recommendation-cover"
-                          style={item.imagePath ? { backgroundImage: `url(${item.imagePath})` } : undefined}
-                        >
-                          {!item.imagePath && <span>{item.name}</span>}
+                        <div className="recommendation-cover">
+                          {item.imagePath ? (
+                            <img
+                              src={item.imagePath}
+                              alt={item.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                          ) : (
+                            <span>{item.name}</span>
+                          )}
                         </div>
                         <button
                           type="button"
