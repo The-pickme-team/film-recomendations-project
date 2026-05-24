@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1/api'
+const API_BASE = '/api'
 
 async function readJson(response) {
   const text = await response.text()
@@ -90,21 +90,19 @@ export function formatFilmYear(value) {
   return text
 }
 
-export async function fetchPopularFilms(limit = 15) {
-  try {
-    const response = await fetch(`${API_BASE}/films/popular?limit=${encodeURIComponent(limit)}`)
-    const payload = await readJson(response)
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch popular films')
-    }
-
-    return Array.isArray(payload) ? payload.map(normalizeFilm) : []
-  } catch (error) {
-    console.warn('Backend popular films fetch failed:', error)
-    throw error
-  }
+function isUuidLike(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value))
 }
+
+function fallbackRecommendations(limit = 3, excludeIds = []) {
+  const excluded = new Set(excludeIds.map(String))
+  return DEMO_FILMS
+    .filter((film) => !excluded.has(String(film.id)))
+    .slice(0, limit)
+    .map(normalizeFilm)
+}
+
+
 
 export async function searchFilms(query) {
   try {
@@ -131,7 +129,7 @@ export async function searchFilms(query) {
       film.name.toLowerCase().includes(lowerQuery) ||
       film.genres.some((g) => g.toLowerCase().includes(lowerQuery)) ||
       film.description.toLowerCase().includes(lowerQuery)
-  )
+  ).map(normalizeFilm)
 }
 
 export async function recommendFilms(filmIds, limit = 3) {
@@ -139,23 +137,29 @@ export async function recommendFilms(filmIds, limit = 3) {
     throw new Error('No film IDs provided for recommendations')
   }
 
-  // 1. Формируем Query-параметры. 
-  // Повторяем film_ids для каждого ID из массива, как это делает Swagger.
-  const queryParams = new URLSearchParams()
-  filmIds.forEach(id => queryParams.append('film_ids', id))
-  queryParams.append('limit', String(limit))
+  const validFilmIds = filmIds.map(String).filter(isUuidLike)
 
-  // 2. Собираем полный URL
+  if (validFilmIds.length === 0) {
+    console.warn('Skipping backend recommendations because film IDs are demo/local IDs:', filmIds)
+    return fallbackRecommendations(limit, filmIds)
+  }
+
+  // Формируем URL с film_ids как query параметры (repeated) и limit
+  const queryParams = new URLSearchParams()
+  validFilmIds.forEach((id) => queryParams.append('film_ids', id))
+  queryParams.append('limit', String(limit))
+  
   const url = `${API_BASE}/films/recommend?${queryParams.toString()}`
 
   console.log('Recommend URL:', url)
-  console.log('Film IDs (body):', filmIds)
+  console.log('Film IDs (body):', validFilmIds)
 
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(filmIds), // Оставляем тело, так как Swagger требует его тоже
+      body: JSON.stringify(validFilmIds),
+      signal: AbortSignal.timeout(10000),
     })
 
     const payload = await readJson(response)
@@ -170,7 +174,7 @@ export async function recommendFilms(filmIds, limit = 3) {
     return Array.isArray(payload) ? payload.map(normalizeFilm) : []
   } catch (error) {
     console.error('recommendFilms error:', error)
-    throw error
+    return fallbackRecommendations(limit, filmIds)
   }
 }
 

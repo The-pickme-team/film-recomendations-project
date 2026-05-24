@@ -5,7 +5,6 @@ import PopularPage from './PopularPage'
 import Profile from './Profile'
 import {
   DEMO_FILMS,
-  fetchPopularFilms,
   normalizeFilm,
   recommendFilms,
   searchFilms,
@@ -29,7 +28,6 @@ function App() {
   const [showRecommendations, setShowRecommendations] = useState(false)
   const [currentPage, setCurrentPage] = useState('home')
   const [profileFilms, setProfileFilms] = useState([])
-  const [popularFilms, setPopularFilms] = useState([])
   const [recommendedFilms, setRecommendedFilms] = useState([])
   const [statusMessage, setStatusMessage] = useState('')
   const [filmModalOpen, setFilmModalOpen] = useState(false)
@@ -41,25 +39,7 @@ function App() {
   const statusTimerRef = useRef(null)
   const filmModalTimerRef = useRef(null)
 
-  useEffect(() => {
-    let active = true
 
-    fetchPopularFilms(15)
-      .then((items) => {
-        if (active) {
-          setPopularFilms(items)
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setPopularFilms(DEMO_FILMS.map(normalizeFilm).slice(0, 15))
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
 
   const profileFilmIds = useMemo(
     () => new Set(profileFilms.map((film) => String(film.id))),
@@ -223,7 +203,6 @@ function App() {
         {currentPage === 'popular' && (
           <PopularPage
             profileFilms={profileFilms}
-            popularFilms={popularFilms}
             recommendedFilms={recommendedFilms}
             onAddToProfile={handleAddToProfile}
             isFilmInProfile={isFilmInProfile}
@@ -336,11 +315,16 @@ function App() {
 
                     return (
                       <div key={item.id} className="recommendation-card">
-                        <div
-                          className="recommendation-cover"
-                          style={item.imagePath ? { backgroundImage: `url(${item.imagePath})` } : undefined}
-                        >
-                          {!item.imagePath && <span>{item.name}</span>}
+                        <div className="recommendation-cover">
+                          {item.imagePath ? (
+                            <img
+                              src={item.imagePath}
+                              alt={item.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                          ) : (
+                            <span>{item.name}</span>
+                          )}
                         </div>
                         <button
                           type="button"
