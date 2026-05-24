@@ -106,9 +106,7 @@ function fallbackRecommendations(limit = 3, excludeIds = []) {
 
 export async function searchFilms(query) {
   try {
-    const response = await fetch(`${API_BASE}/films/search?film_name=${encodeURIComponent(query)}`, {
-      signal: AbortSignal.timeout(5000),
-    })
+    const response = await fetch(`${API_BASE}/films/search?film_name=${encodeURIComponent(query)}`)
     const payload = await readJson(response)
 
     if (!response.ok) {

@@ -23,6 +23,32 @@ function makeManualFilm(title, index) {
   })
 }
 
+function isUuidLike(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value))
+}
+
+async function resolveBackendFilm(movie) {
+  const selected = normalizeFilm(movie)
+
+  if (isUuidLike(selected.id)) {
+    return selected
+  }
+
+  try {
+    const query = selected.name || movie.title || ''
+    if (!query) {
+      return selected
+    }
+
+    const matches = await searchFilms(query)
+    const exactMatch = matches.find((item) => item.name.toLowerCase() === selected.name.toLowerCase())
+    return exactMatch ?? matches[0] ?? selected
+  } catch (error) {
+    console.warn('Could not resolve backend film for profile:', error)
+    return selected
+  }
+}
+
 function App() {
   const [films, setFilms] = useState(initialFilms)
   const [showRecommendations, setShowRecommendations] = useState(false)
@@ -137,7 +163,13 @@ function App() {
 
   const handleGenerate = async () => {
     const selectedFilms = profileFilms.filter(Boolean)
-    const filmIds = selectedFilms.map((film) => film.id)
+    const resolvedFilms = []
+
+    for (const film of selectedFilms) {
+      resolvedFilms.push(await resolveBackendFilm(film))
+    }
+
+    const filmIds = resolvedFilms.map((film) => film.id)
 
     setShowRecommendations(true)
 
@@ -160,12 +192,12 @@ function App() {
     setCurrentPage('home')
   }
 
-  const handleAddToProfile = (movie) => {
-    const selected = normalizeFilm(movie)
+  const handleAddToProfile = async (movie) => {
+    const selected = await resolveBackendFilm(movie)
     let notification = `${selected.name} added to profile`
 
     setProfileFilms((current) => {
-      const exists = current.some((film) => String(film.id) === selected.id)
+      const exists = current.some((film) => String(film.id) === String(selected.id))
       if (exists) {
         notification = `${selected.name} is already in profile`
         return current
