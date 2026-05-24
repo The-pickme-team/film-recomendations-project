@@ -7,6 +7,7 @@ import {
   DEMO_FILMS,
   normalizeFilm,
   recommendFilms,
+  searchBackendFilms,
   searchFilms,
 } from './api'
 
@@ -40,7 +41,7 @@ async function resolveBackendFilm(movie) {
       return selected
     }
 
-    const matches = await searchFilms(query)
+    const matches = await searchBackendFilms(query)
     const exactMatch = matches.find((item) => item.name.toLowerCase() === selected.name.toLowerCase())
     return exactMatch ?? matches[0] ?? selected
   } catch (error) {
@@ -162,35 +163,45 @@ function App() {
   }
 
   const handleGenerate = async () => {
-    const selectedFilms = profileFilms.filter(Boolean)
-    const resolvedFilms = []
+  // Исправлено: берем фильмы из `films` (выбранные карточки на главном экране), а не из профиля
+  const selectedFilms = films.filter(Boolean)
 
-    for (const film of selectedFilms) {
-      resolvedFilms.push(await resolveBackendFilm(film))
-    }
-
-    const filmIds = resolvedFilms.map((film) => film.id)
-
-    setShowRecommendations(true)
-
-    if (!filmIds.length) {
-      setRecommendedFilms([])
-      upsertStatus('Add at least one film to profile first')
-      setCurrentPage('home')
-      return
-    }
-
-    try {
-      const generated = await recommendFilms(filmIds, 12)
-      setRecommendedFilms(generated)
-      upsertStatus('Recommendations updated')
-    } catch (error) {
-      console.error('Generate recommendations failed:', error)
-      setRecommendedFilms(DEMO_FILMS.map(normalizeFilm).slice(0, 3))
-      upsertStatus(`Failed to fetch recommendations: ${error.message}`)
-    }
-    setCurrentPage('home')
+  if (!selectedFilms.length) {
+    upsertStatus('Add at least one film to the slots first')
+    return
   }
+
+  const resolvedFilms = []
+  for (const film of selectedFilms) {
+    resolvedFilms.push(await resolveBackendFilm(film))
+  }
+
+  const filmIds = resolvedFilms.map((film) => film.id)
+  // Убираем жесткую блокировку по UUID, чтобы дать бэкенду шанс обработать запросы,
+  // либо оставляем, если бэкенд строго падает на не-UUID.
+  const uuidFilmIds = filmIds.filter(isUuidLike)
+
+  setShowRecommendations(true)
+
+  // Если настоящих UUID из базы нет, пробуем отправить всё что есть, 
+  // либо выводим предупреждение БЕЗ досрочного return, если бэкенд умеет их переваривать.
+  if (!uuidFilmIds.length) {
+    console.warn('No UUIDs found, trying to send raw IDs:', filmIds)
+  }
+
+  try {
+    // Передаем id на бэкенд. Если бэкенд строго требует UUID, передайте uuidFilmIds
+    const idsToSend = uuidFilmIds.length > 0 ? uuidFilmIds : filmIds
+    
+    const generated = await recommendFilms(idsToSend, 12)
+    setRecommendedFilms(generated)
+    upsertStatus('Recommendations updated')
+  } catch (error) {
+    console.error('Generate recommendations failed:', error)
+    setRecommendedFilms(DEMO_FILMS.map(normalizeFilm).slice(0, 3))
+    upsertStatus(`Failed to fetch recommendations: ${error.message}`)
+  }
+}
 
   const handleAddToProfile = async (movie) => {
     const selected = await resolveBackendFilm(movie)

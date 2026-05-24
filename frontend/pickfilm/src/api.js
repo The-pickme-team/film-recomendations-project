@@ -130,6 +130,17 @@ export async function searchFilms(query) {
   ).map(normalizeFilm)
 }
 
+export async function searchBackendFilms(query) {
+  const response = await fetch(`${API_BASE}/films/search?film_name=${encodeURIComponent(query)}`)
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(payload, 'Search failed'))
+  }
+
+  return Array.isArray(payload) ? payload.map(normalizeFilm) : []
+}
+
 export async function recommendFilms(filmIds, limit = 3) {
   if (!filmIds || filmIds.length === 0) {
     throw new Error('No film IDs provided for recommendations')
