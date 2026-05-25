@@ -122,6 +122,22 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+.pop-card__poster {
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+}
+
+.pop-card__poster img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .pop-card__info {
   padding: 10px 12px 12px;
   display: flex;
@@ -166,6 +182,20 @@
 
 .pop-card__btn:hover {
   background: rgba(255, 91, 223, 0.25);
+}
+
+.pop-card__btn:disabled {
+  cursor: default;
+}
+
+.pop-card__btn--added {
+  background: rgba(156, 255, 213, 0.16);
+  border-color: rgba(156, 255, 213, 0.3);
+  color: #c8ffee;
+}
+
+.pop-card--added {
+  border-color: rgba(156, 255, 213, 0.22);
 }
 
 @media (max-width: 960px) {

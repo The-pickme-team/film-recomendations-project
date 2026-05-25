@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:20-bullseye AS build
 
 WORKDIR /app
 COPY pickfilm/package*.json ./

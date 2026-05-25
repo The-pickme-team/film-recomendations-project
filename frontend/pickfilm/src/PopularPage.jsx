@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { formatFilmYear } from './api'
+import { formatFilmYear, DEMO_FILMS, normalizeFilm } from './api'
 import './PopularPage.css'
 
 // Temporary films for the "popular right now" section
@@ -78,7 +78,7 @@ function PopularPage({ profileFilms, recommendedFilms, onAddToProfile }) {
 
       <section className="pop-section">
         <h2 className="pop-section__title">🔥 Popular right now!</h2>
-        <p className="pop-section__sub">Titles everyone is watching this week ↴</p>
+        <p className="pop-section__sub">If you want to see pictures here, buy a pro+ subscription. ↴</p>
 
         <div className="slider-wrap">
           <button type="button" className="slider-arrow left" onClick={scrollLeft}>
@@ -111,13 +111,13 @@ function PopularPage({ profileFilms, recommendedFilms, onAddToProfile }) {
 
       <section className="pop-section">
         <h2 className="pop-section__title">🎯 Recommendations based on your added movies</h2>
-        <p className="pop-section__sub">Picked just for you ❤︎⁠</p>
+        <p className="pop-section__sub">If you want to see pictures here, buy a pro+ subscription ❤︎⁠</p>
         <div className="popular-context">
           <span>{profileFilms.length ? `${profileFilms.length} films in your profile` : 'No films added yet'}</span>
         </div>
 
         <div className="pop-grid--large">
-          {(recommendedFilms.length ? recommendedFilms : RECOMMENDED).map(movie => {
+          {(recommendedFilms.length ? recommendedFilms : DEMO_FILMS.map(normalizeFilm).slice(0, 8)).map(movie => {
             const meta = getFilmMeta(movie)
 
             return (
