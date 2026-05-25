@@ -183,7 +183,9 @@ async def search_movie_by_title(
         "description": overview,
         "year_of_release": release_date,
         "genres": genre_names,
-        "image_path": f"/media/{Path(local_image_path).name}" if local_image_path else "",
+        "image_path": (
+            f"/media/{Path(local_image_path).name}" if local_image_path else ""
+        ),
     }
 
 
@@ -429,7 +431,9 @@ async def main():
         current_count = existing_count + len(seed_movies)
         if current_count < FILMS_TARGET_COUNT:
             missing_count = FILMS_TARGET_COUNT - current_count
-            print(f"Догружаємо ще {missing_count} фільмів до цілі {FILMS_TARGET_COUNT}...")
+            print(
+                f"Догружаємо ще {missing_count} фільмів до цілі {FILMS_TARGET_COUNT}..."
+            )
             generated_movies = await collect_unique_movies(
                 session=session,
                 genre_mapping=genres_map,
