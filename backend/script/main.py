@@ -22,7 +22,31 @@ DATABASE_URL = os.getenv(
 )
 
 IMAGES_DIR = Path(__file__).parent.parent / "images"
-FILMS_FILE = Path(__file__).resolve().parents[2] / "films.txt"
+
+
+def resolve_films_file() -> Path:
+    candidates = []
+
+    films_file_env = os.getenv("FILMS_FILE")
+    if films_file_env:
+        candidates.append(Path(films_file_env))
+
+    candidates.extend(
+        [
+            Path.cwd() / "films.txt",
+            Path("/app/films.txt"),
+            Path(__file__).resolve().parents[2] / "films.txt",
+        ]
+    )
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return candidates[0]
+
+
+FILMS_FILE = resolve_films_file()
 
 # Кешування моделі
 model = SentenceTransformer("BAAI/bge-m3", device="cpu")
