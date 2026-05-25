@@ -1,9 +1,9 @@
 FROM node:20-bullseye AS build
 
 WORKDIR /app
-COPY pickfilm/package*.json ./
+COPY pickfilm/package.json ./
 
-RUN npm install --prefer-offline --no-audit --no-fund
+RUN npm install --prefer-offline --include=optional --no-audit --no-fund
 
 COPY pickfilm/ .
 
