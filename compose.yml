@@ -55,6 +55,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/database
       TMDB_API_KEY: d5af69280dd7493bb219e8f9c2c0e24c
     volumes:
+      - ./films.txt:/app/films.txt:ro
       - media_data:/app/images
     depends_on:
       postgres:
