@@ -153,7 +153,6 @@ export async function recommendFilms(filmIds, limit = 3) {
     return fallbackRecommendations(limit, filmIds)
   }
 
-  // Формируем URL с film_ids как query параметры (repeated) и limit
   const queryParams = new URLSearchParams()
   validFilmIds.forEach((id) => queryParams.append('film_ids', id))
   queryParams.append('limit', String(limit))

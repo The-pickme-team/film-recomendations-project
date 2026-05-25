@@ -163,7 +163,6 @@ function App() {
   }
 
   const handleGenerate = async () => {
-  // Исправлено: берем фильмы из `films` (выбранные карточки на главном экране), а не из профиля
   const selectedFilms = films.filter(Boolean)
 
   if (!selectedFilms.length) {
@@ -177,20 +176,18 @@ function App() {
   }
 
   const filmIds = resolvedFilms.map((film) => film.id)
-  // Убираем жесткую блокировку по UUID, чтобы дать бэкенду шанс обработать запросы,
-  // либо оставляем, если бэкенд строго падает на не-UUID.
   const uuidFilmIds = filmIds.filter(isUuidLike)
 
   setShowRecommendations(true)
 
-  // Если настоящих UUID из базы нет, пробуем отправить всё что есть, 
-  // либо выводим предупреждение БЕЗ досрочного return, если бэкенд умеет их переваривать.
+  if (!uuidFilmIds.length) {
+    console.warn('No UUIDs found, trying to send raw IDs:', filmIds)
+  }
   if (!uuidFilmIds.length) {
     console.warn('No UUIDs found, trying to send raw IDs:', filmIds)
   }
 
   try {
-    // Передаем id на бэкенд. Если бэкенд строго требует UUID, передайте uuidFilmIds
     const idsToSend = uuidFilmIds.length > 0 ? uuidFilmIds : filmIds
     
     const generated = await recommendFilms(idsToSend, 12)

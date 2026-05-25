@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from litestar import get, post
@@ -37,7 +36,7 @@ async def search_films_handler(
 ) -> list[FilmSearchResponse]:
     statement = (
         select(Film)
-        .where(Film.name.ilike(f"%{film_name}%"))
+        .where(Film.name.ilike(f"%{film_name.lower()}%"))
         .order_by(Film.year_of_release.desc())
     )
 

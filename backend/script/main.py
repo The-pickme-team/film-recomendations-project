@@ -22,7 +22,7 @@ DATABASE_URL = os.getenv(
 )
 
 IMAGES_DIR = Path(__file__).parent.parent / "images"
-FILMS_TARGET_COUNT = int(os.getenv("FILMS_TARGET_COUNT", "1000"))
+FILMS_TARGET_COUNT = int(os.getenv("FILMS_TARGET_COUNT", "5000"))
 
 
 def resolve_films_file() -> Path:
