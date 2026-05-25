@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -21,6 +22,7 @@ DATABASE_URL = os.getenv(
 )
 
 IMAGES_DIR = Path(__file__).parent.parent / "images"
+FILMS_FILE = Path(__file__).resolve().parents[2] / "films.txt"
 
 # Кешування моделі
 model = SentenceTransformer("BAAI/bge-m3", device="cpu")
@@ -39,6 +41,100 @@ def encode_texts_sync(texts: list[str]) -> list[list[float]]:
     """Синхронна функція для генерації ембедингів."""
     embeddings = model.encode(texts, normalize_embeddings=True)
     return embeddings.tolist()
+
+
+def normalize_title(title: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]+", " ", title.lower(), flags=re.UNICODE).split())
+
+
+def title_matches(query: str, candidate: str) -> bool:
+    query_normalized = normalize_title(query)
+    candidate_normalized = normalize_title(candidate)
+    return (
+        query_normalized == candidate_normalized
+        or query_normalized in candidate_normalized
+        or candidate_normalized in query_normalized
+    )
+
+
+def load_film_titles() -> list[str]:
+    if not FILMS_FILE.exists():
+        raise FileNotFoundError(f"Не знайдено файл зі списком фільмів: {FILMS_FILE}")
+
+    return [
+        line.strip()
+        for line in FILMS_FILE.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+async def search_movie_by_title(
+    session: aiohttp.ClientSession,
+    title: str,
+    genre_mapping: dict[int, str],
+    language: str,
+) -> dict | None:
+    url = f"{BASE_URL}/search/movie"
+    params: dict[str, str | int] = {
+        "api_key": get_tmdb_api_key(),
+        "language": language,
+        "query": title,
+        "include_adult": "false",
+        "page": 1,
+    }
+
+    async with session.get(url, params=params) as response:
+        response.raise_for_status()
+        data = await response.json()
+
+    results = data.get("results", [])
+    if not results:
+        return None
+
+    best_item = None
+    for item in results:
+        candidate_title = item.get("title") or item.get("original_title") or ""
+        if not candidate_title:
+            continue
+
+        if title_matches(title, candidate_title):
+            best_item = item
+            break
+
+        if best_item is None:
+            best_item = item
+
+    if best_item is None:
+        return None
+
+    candidate_title = best_item.get("title") or best_item.get("original_title")
+    overview = best_item.get("overview")
+    release_date_raw = best_item.get("release_date")
+
+    if not candidate_title or not overview or not release_date_raw:
+        return None
+
+    try:
+        release_date = datetime.strptime(release_date_raw, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+    genre_names = [
+        genre_mapping[g_id]
+        for g_id in best_item.get("genre_ids", [])
+        if g_id in genre_mapping
+    ]
+
+    poster_path = best_item.get("poster_path")
+    local_image_path = await download_image(session, poster_path)
+
+    return {
+        "name": candidate_title,
+        "description": overview,
+        "year_of_release": release_date,
+        "genres": genre_names,
+        "image_path": f"/media/{Path(local_image_path).name}" if local_image_path else "",
+    }
 
 
 async def get_existing_film_names() -> set[str]:
@@ -83,6 +179,39 @@ async def download_image(session: aiohttp.ClientSession, poster_path: str) -> st
         print(f"Не вдалося завантажити зображення {url}: {e}")
 
     return ""
+
+
+async def collect_movies_from_films_file(
+    session: aiohttp.ClientSession,
+    genre_mapping: dict[int, str],
+    existing_names: set[str],
+) -> list[dict]:
+    titles = load_film_titles()
+    movies_ready = []
+    search_languages = ["en-US", "uk-UA", "ru-RU"]
+
+    print(f"Починаємо обробку {len(titles)} фільмів із films.txt...")
+
+    for title in titles:
+        movie = None
+        for language in search_languages:
+            movie = await search_movie_by_title(session, title, genre_mapping, language)
+            if movie:
+                break
+
+        if movie is None:
+            print(f"⚠️ Не вдалося знайти фільм у TMDB: {title}")
+            continue
+
+        if movie["name"] in existing_names:
+            print(f"↩️ Пропускаємо вже наявний фільм: {movie['name']}")
+            continue
+
+        movies_ready.append(movie)
+        existing_names.add(movie["name"])
+        print(f"✅ Знайдено та підготовлено: {movie['name']}")
+
+    return movies_ready
 
 
 async def collect_unique_movies(
@@ -222,37 +351,26 @@ async def process_and_save_movies(movies: list[dict]):
 
 async def main():
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-    TARGET_MOVIES_PER_LANGUAGE = 1000
 
     print("Зчитуємо вже наявні фільми з бази даних...")
     existing_names = await get_existing_film_names()
     print(f"У базі вже є {len(existing_names)} унікальних назв.")
 
     async with aiohttp.ClientSession() as session:
-        for language in ["en-US"]:
-            print(f"\n=== Обробка мови: {language} ===")
-            print("Завантажуємо мапу жанрів...")
-            genres_map = await get_genre_mapping(session, language)
+        print("Завантажуємо мапу жанрів...")
+        genres_map = await get_genre_mapping(session, "en-US")
 
-            # Збираємо рівно потрібну кількість НОВИХ фільмів
-            new_movies = await collect_unique_movies(
-                session=session,
-                genre_mapping=genres_map,
-                existing_names=existing_names,
-                language=language,
-                target_count=TARGET_MOVIES_PER_LANGUAGE,
-            )
+        new_movies = await collect_movies_from_films_file(
+            session=session,
+            genre_mapping=genres_map,
+            existing_names=existing_names,
+        )
 
-            if new_movies:
-                await process_and_save_movies(new_movies)
-                # Додаємо щойно збережені фільми до списку "існуючих",
-                # щоб наступна мова не дублювала їх, якщо назви співпадають.
-                for m in new_movies:
-                    existing_names.add(m["name"])
-            else:
-                print(f"Для мови {language} нових фільмів не знайдено.")
+        if new_movies:
+            await process_and_save_movies(new_movies)
+        else:
+            print("Нових фільмів із films.txt не знайдено.")
 
 
 if __name__ == "__main__":
-    uvloop.install()
-    asyncio.run(main())
+    uvloop.run(main())
