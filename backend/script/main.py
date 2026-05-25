@@ -22,6 +22,7 @@ DATABASE_URL = os.getenv(
 )
 
 IMAGES_DIR = Path(__file__).parent.parent / "images"
+FILMS_TARGET_COUNT = int(os.getenv("FILMS_TARGET_COUNT", "1000"))
 
 
 def resolve_films_file() -> Path:
@@ -83,13 +84,38 @@ def title_matches(query: str, candidate: str) -> bool:
 
 def load_film_titles() -> list[str]:
     if not FILMS_FILE.exists():
-        raise FileNotFoundError(f"Не знайдено файл зі списком фільмів: {FILMS_FILE}")
+        return []
 
     return [
         line.strip()
         for line in FILMS_FILE.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def load_film_titles_set() -> set[str]:
+    return set(load_film_titles())
+
+
+async def append_movies_to_films_file(movies: list[dict]) -> None:
+    titles_to_add = [movie["name"].strip() for movie in movies if movie.get("name")]
+    if not titles_to_add:
+        return
+
+    existing_titles = load_film_titles_set()
+    unique_titles = [title for title in titles_to_add if title not in existing_titles]
+    if not unique_titles:
+        return
+
+    FILMS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    file_existed = FILMS_FILE.exists()
+    file_had_content = file_existed and FILMS_FILE.stat().st_size > 0
+
+    async with aiofiles.open(FILMS_FILE, mode="a", encoding="utf-8") as file:
+        if file_had_content:
+            await file.write("\n")
+        await file.write("\n".join(unique_titles))
+        await file.write("\n")
 
 
 async def search_movie_by_title(
@@ -378,21 +404,46 @@ async def main():
 
     print("Зчитуємо вже наявні фільми з бази даних...")
     existing_names = await get_existing_film_names()
-    print(f"У базі вже є {len(existing_names)} унікальних назв.")
+    existing_count = len(existing_names)
+    print(f"У базі вже є {existing_count} унікальних назв.")
+
+    if existing_count >= FILMS_TARGET_COUNT:
+        print(
+            f"База вже містить {existing_count} фільмів, ціль {FILMS_TARGET_COUNT} досягнута."
+        )
+        return
 
     async with aiohttp.ClientSession() as session:
         print("Завантажуємо мапу жанрів...")
         genres_map = await get_genre_mapping(session, "en-US")
 
-        new_movies = await collect_movies_from_films_file(
+        seed_movies = await collect_movies_from_films_file(
             session=session,
             genre_mapping=genres_map,
             existing_names=existing_names,
         )
 
-        if new_movies:
-            await process_and_save_movies(new_movies)
-        else:
+        if seed_movies:
+            await process_and_save_movies(seed_movies)
+
+        current_count = existing_count + len(seed_movies)
+        if current_count < FILMS_TARGET_COUNT:
+            missing_count = FILMS_TARGET_COUNT - current_count
+            print(f"Догружаємо ще {missing_count} фільмів до цілі {FILMS_TARGET_COUNT}...")
+            generated_movies = await collect_unique_movies(
+                session=session,
+                genre_mapping=genres_map,
+                existing_names=existing_names,
+                target_count=missing_count,
+            )
+
+            if generated_movies:
+                await process_and_save_movies(generated_movies)
+                await append_movies_to_films_file(generated_movies)
+            else:
+                print("Не вдалося добрати додаткові фільми до цільового ліміту.")
+
+        if not seed_movies and existing_count < FILMS_TARGET_COUNT:
             print("Нових фільмів із films.txt не знайдено.")
 
 
