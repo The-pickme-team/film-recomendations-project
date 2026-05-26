@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 echo "Starting Granian ASGI server..."
 
-# Принудительно удаляем зависший сокет от предыдущего запуска
 rm -f /tmp/sockets/granian.sock
 
 exec granian \

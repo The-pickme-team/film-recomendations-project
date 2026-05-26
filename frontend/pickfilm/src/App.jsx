@@ -179,6 +179,10 @@ function App() {
   const uuidFilmIds = filmIds.filter(isUuidLike)
 
   setShowRecommendations(true)
+
+  if (!uuidFilmIds.length) {
+    console.warn('No UUIDs found, trying to send raw IDs:', filmIds)
+  }
   if (!uuidFilmIds.length) {
     console.warn('No UUIDs found, trying to send raw IDs:', filmIds)
   }
