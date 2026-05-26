@@ -133,12 +133,11 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .picker-button:hover {
-  transform: translateY(-3px);
-  background: #ffccff;
+  background: #f4bbff;
 }
 
 .picker-button--selected {
@@ -166,7 +165,7 @@
   font-size: 1rem;
   line-height: 1.4;
   color: #fff;
-  background: linear-gradient(180deg, rgba(255, 116, 216, 0.8), rgba(155, 78, 145, 0.95));
+  background: transparent;
 }
 
 .picker-button--selected .picker-poster--fallback {

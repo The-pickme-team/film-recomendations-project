@@ -319,13 +319,13 @@ function App() {
                       style={film?.imagePath ? { backgroundImage: `url(${film.imagePath})` } : undefined}
                       onClick={() => handleAddFilm(index)}
                     >
-                      {film ? (
-                        <div className="picker-poster picker-poster--fallback">
-                          {!film.imagePath && <span>{film.name}</span>}
-                        </div>
-                      ) : (
+                      {!film ? (
                         <span className="plus">+</span>
-                      )}
+                      ) : !film.imagePath ? (
+                        <div className="picker-poster picker-poster--fallback">
+                          <span>{film.name}</span>
+                        </div>
+                      ) : null}
                     </button>
                     <div className={`picker-value ${film ? 'picker-value--selected' : ''}`}>
                       {film ? film.name : 'Add film'}
